@@ -1,14 +1,31 @@
+/*  
+ *  Copyright 2010 Tom Castle (www.tc33.org)
+ *  Licensed under GNU General Public License
+ * 
+ *  This file is part of JHeatChart - the heat maps charting api for Java.
+ *
+ *  JHeatChart is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  JHeatChart is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ * 
+ *  You should have received a copy of the GNU General Public License
+ *  along with JHeatChart.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.tc33.jheatchart;
 
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 
-import javax.imageio.*;
-
-import sun.font.FontManager;
+import javax.imageio.ImageIO;
 
 /**
  * The chart image will not actually be created until either saveToFile() or 
