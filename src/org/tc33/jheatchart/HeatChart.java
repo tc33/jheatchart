@@ -29,12 +29,91 @@ import java.math.*;
 import javax.imageio.ImageIO;
 
 /**
- * The chart image will not actually be created until either saveToFile() or 
- * getChartImage() are called. 
+ * The <code>HeatChart</code> class describes a chart which can display 
+ * 3-dimensions of zValues. Heat charts are sometimes known as heat maps. 
+ * 
+ * <p>
+ * Use of this chart would typically involve 3 steps:
+ * <ol>
+ * <li>Construction of a new instance, providing the necessary zValues for the x,y,z values.</li>
+ * <li>Configure the visual settings.</li>
+ * <li>A call to either <code>getChartImage()</code> or <code>saveToFile(String)</code>.</li>
+ * </ol>
+ * 
+ * <h3>Instantiation</h3>
+ * <p>
+ * Construction of a new <code>HeatChart</code> instance is through one of two
+ * constructors. Both constructors take a 2-dimensional array of <tt>doubles</tt> 
+ * which should contain the z-values for the chart. Consider this array to be 
+ * the grid of values which will instead be represented as colours in the chart. 
+ * One of the constructors then takes an interval and an offset for each of the 
+ * x and y axis. These parameters supply the necessary information to describe 
+ * the x-values and y-values for the zValues in the array. The quantity of x-values 
+ * and y-values is already known from the lengths of the array dimensions. Then 
+ * the offset parameters indicate what value the column or row in element 0 
+ * represents. The intervals provide the increment from one column or row to the 
+ * next.
+ * 
+ * <p>
+ * <strong>Consider an example:</strong>
+ * <blockquote><pre>
+ * double[][] zValues = new double[][]{
+ * 		{1.2, 1.3, 1.5},
+ * 		{1.0, 1.1, 1.6},
+ * 		{0.7, 0.9, 1.3}
+ * };
+ * 
+ * double xOffset = 1.0;
+ * double yOffset = 0.0;
+ * double xInterval = 1.0;
+ * double yInterval = 2.0;
+ * 
+ * HeatChart chart = new HeatChart(zValues, xOffset, yOffset, xInterval, yInterval);
+ * </pre></blockquote>
+ * 
+ * In this example, the z-values range from 0.7 to 1.6. The x-values range from 
+ * the xOffset value 1.0 to 4.0, which is calculated as the number of x-values 
+ * multiplied by the xInterval, shifted by the xOffset of 1.0. The y-values are 
+ * calculated in the same way to give a range of values from 0.0 to 6.0. 
+ * 
+ * <p>The other constructor uses default values of 0 for both offset parameters 
+ * and 1 for both interval parameters, therefore keeping it in line with the 
+ * indexing of the array. As a result, element [5][4] of the z-values array will 
+ * represent an x-value of 4.0 and a y-value of 5.0 (with the contents of that 
+ * element being the z-value).
+ * 
+ * <p>A third constructor is likely to be added in a later version to enable the use 
+ * of non-numeric x and y values.
+ * 
+ * <h3>Configuration</h3>
+ * <p>
+ * This step is optional. By default the heat chart will be generated without a 
+ * title or labels on the axis, and the colouring of the heat map will be in 
+ * grayscale. A large range of configuration options are available to customise
+ * the chart. All customisations are available through simple accessor methods.
+ * See the javadoc of each of the methods for more information.
+ * 
+ * <h3>Output</h3>
+ * <p>
+ * The generated heat chart can be obtained in two forms, using the following 
+ * methods:
+ * <ul>
+ * <li><strong>getChartImage()</strong> - The chart will be returned as a 
+ * <code>BufferedImage</code> object that can be used in any number of ways, 
+ * most notably it can be inserted into a Swing component, for use in a GUI 
+ * application.</li>
+ * <li><strong>saveToFile(File)</strong> - The chart will be saved to the file 
+ * system at the file location specified as a parameter. The image format that  
+ * the image will be saved in is derived from the extension of the file name.</li>
+ * </ul>
+ * 
+ * <strong>Note:</strong> The chart image will not actually be created until 
+ * either saveToFile(File) or getChartImage() are called, and will be 
+ * regenerated on each successive call.
  */
 public class HeatChart {
 	
-	private double[][] data;
+	private double[][] zValues;
 	private double xOffset;
 	private double yOffset;
 	private double xInterval;
@@ -88,26 +167,28 @@ public class HeatChart {
 	private boolean flexibleChartSize;
 	
 	/**
-	 * Creates a heatmap for x values 0..data[0].length-1 and
-	 * y values 0..data.length-1.
+	 * Creates a heatmap for x-values from 0 to zValues[0].length-1 and
+	 * y-values from 0 to zValues.length-1.
 	 * 
-	 * @param data
+	 * @param zValues The z-value zValues, where each element is a row of z-values
+	 * in the resultant heat chart.
 	 */
-	public HeatChart(double[][] data) {
-		this(data, 0.0, 0.0, 1.0, 1.0);
+	public HeatChart(double[][] zValues) {
+		this(zValues, 0.0, 0.0, 1.0, 1.0);
 	}
 	
 	/**
-	 * Creates a heatmap for x values from xOffset..(xInterval*data[0].length-1)
-	 * and y values yOffset..(yInterval*data.length-1).
-	 * @param data
+	 * Creates a heatmap for x-values ranging from xOffset to (xInterval * zValues[0].length-1)
+	 * and y-values ranging from yOffset to (yInterval * zValues.length-1).
+	 * 
+	 * @param zValues
 	 * @param xOffset
 	 * @param yOffset
 	 * @param xInterval
 	 * @param yInterval
 	 */
-	public HeatChart(double[][] data, double xOffset, double yOffset, double xInterval, double yInterval) {
-		this.data = data;
+	public HeatChart(double[][] zValues, double xOffset, double yOffset, double xInterval, double yInterval) {
+		this.zValues = zValues;
 		this.xOffset = xOffset;
 		this.yOffset = yOffset;
 		this.xInterval = xInterval;
@@ -149,7 +230,7 @@ public class HeatChart {
 	}
 	
 	public void setData(double[][] data) {
-		this.data = data;
+		this.zValues = data;
 	}
 	
 	/**
@@ -157,7 +238,7 @@ public class HeatChart {
 	 * @return
 	 */
 	public double[][] getData() {
-		return data;
+		return zValues;
 	}
 	
 	/**
@@ -476,11 +557,19 @@ public class HeatChart {
 	public void saveToFile(File outputFile) throws IOException {
 		BufferedImage chart = (BufferedImage) getChartImage();
 		
-		//TODO Determine the image format from the extension.
+		String filename = outputFile.getName();
 		
+		int extPoint = filename.lastIndexOf('.');
+		
+		if (extPoint < 0) {
+			throw new IOException("Illegal filename, no extension used.");
+		}
+		
+		// Determine the extension of the filename.
+		String ext = filename.substring(extPoint + 1);		
 		
 		// Save our graphic.
-		ImageIO.write(chart, "png", outputFile);
+		ImageIO.write(chart, ext, outputFile);
 	}
 	
 	public Image getChartImage() {
@@ -505,7 +594,7 @@ public class HeatChart {
 		measureAxisValues(chartGraphics);
 		
 		// Draw the heatmap image.
-		drawHeatMap(chartGraphics, data);
+		drawHeatMap(chartGraphics, zValues);
 		
 		// Draw the axis labels.
 		drawXLabel(chartGraphics);
@@ -637,7 +726,7 @@ public class HeatChart {
 			return;
 		}
 		
-		int noXCells = data[0].length;
+		int noXCells = zValues[0].length;
 		int cellWidth = heatMapWidth/noXCells;
 		
 		chartGraphics.setColor(axisValuesColour);
@@ -681,7 +770,7 @@ public class HeatChart {
 			return;
 		}
 		
-		int noYCells = data.length;
+		int noYCells = zValues.length;
 		int cellHeight = heatMapHeight/noYCells;
 		
 		chartGraphics.setColor(axisValuesColour);
@@ -759,7 +848,7 @@ public class HeatChart {
 		
 		for (int x=0; x<noXCells; x++) {
 			for (int y=0; y<noYCells; y++) {
-				// Set colour depending on data.
+				// Set colour depending on zValues.
 				heatMapGraphics.setColor(getCellColour(data[y][x], dataMin, dataMax));
 				
 				int cellX = x*cellWidth;
