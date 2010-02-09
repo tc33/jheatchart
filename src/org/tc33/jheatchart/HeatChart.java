@@ -15,19 +15,6 @@ import sun.font.FontManager;
  * getChartImage() are called. 
  */
 public class HeatChart {
-
-	private static final Color[] COLOUR_GROUPS = {
-		new Color(0,0,0,255),
-		new Color(0,0,0,230),
-		new Color(0,0,0,205),
-		new Color(0,0,0,180),
-		new Color(0,0,0,155),
-		new Color(0,0,0,130),
-		new Color(0,0,0,105),
-		new Color(0,0,0,80),
-		new Color(0,0,0,55),
-		new Color(0,0,0,30)
-	};
 	
 	private double[][] data;
 	private double xOffset;
@@ -69,6 +56,10 @@ public class HeatChart {
 	private boolean showXAxisValues;
 	private boolean showYAxisValues;
 	
+	// How many RGB steps there are between the high and low colours.
+	private int colourValueDistance;
+	private Color highValueColour;
+	private Color lowValueColour;
 	
 	private int heatMapWidth;
 	private int heatMapHeight;
@@ -81,8 +72,6 @@ public class HeatChart {
 	 */
 	public HeatChart(double[][] data) {
 		this(data, 0.0, 0.0, 1.0, 1.0);
-		
-		
 	}
 	
 	/**
@@ -126,7 +115,10 @@ public class HeatChart {
 		this.yAxisValuesWidth = 0;
 		
 		this.backgroundColour = Color.WHITE;
-
+		this.highValueColour = Color.BLACK;
+		this.lowValueColour = Color.WHITE;
+		
+		updateColourDistance();
 	}
 	
 	public void setData(double[][] data) {
@@ -395,6 +387,39 @@ public class HeatChart {
 
 	public void setShowYAxisValues(boolean showYAxisValues) {
 		this.showYAxisValues = showYAxisValues;
+	}
+
+	public Color getHighValueColour() {
+		return highValueColour;
+	}
+
+	public void setHighValueColour(Color highValueColour) {
+		this.highValueColour = highValueColour;
+		
+		updateColourDistance();
+	}
+	
+	public Color getLowValueColour() {
+		return lowValueColour;
+	}
+
+	public void setLowValueColour(Color lowValueColour) {
+		this.lowValueColour = lowValueColour;
+		
+		updateColourDistance();
+	}
+	
+	private void updateColourDistance() {
+		int r1 = lowValueColour.getRed();
+		int g1 = lowValueColour.getGreen();
+		int b1 = lowValueColour.getBlue();
+		int r2 = highValueColour.getRed();
+		int g2 = highValueColour.getGreen();
+		int b2 = highValueColour.getBlue();
+		
+		colourValueDistance = Math.abs(r1 - r2);
+		colourValueDistance += Math.abs(g1 - g2);
+		colourValueDistance += Math.abs(b1 - b2);
 	}
 
 	public void saveToFile(File outputFile) throws IOException {
@@ -689,17 +714,50 @@ public class HeatChart {
 		chartGraphics.drawImage(heatMapImage, xHeatMap, yHeatMap, heatMapWidth, heatMapHeight, null);
 	}
 	
-	private static Color getCellColour(double data, double min, double max) {
+	private Color getCellColour(double data, double min, double max) {		
 		double range = max - min;
-		data = data - min;
+		double position = data - min;
 
-		if (data == 0) {
-			return new Color(0,0,0,255);
-		} else {
-			double percentPosition = data / range;
-			int group = (int) Math.floor(percentPosition * 155) + 100;
+		// What proportion of the way through the possible values is that.
+		double percentPosition = position / range;
+		
+		// Which colour group does that put us in.
+		int colourPosition = (int) Math.floor(percentPosition * colourValueDistance);
+		
+		int r = lowValueColour.getRed();
+		int g = lowValueColour.getGreen();
+		int b = lowValueColour.getBlue();
+		
+		// Make i shifts of the colour, where i is the colourPosition.
+		for (int i=0; i<colourPosition; i++) {
+			int rDistance = r - highValueColour.getRed();
+			int gDistance = g - highValueColour.getGreen();
+			int bDistance = b - highValueColour.getBlue();
 			
-			return new Color(0, 0, 0, (255-group));
+			if ((Math.abs(rDistance) >= Math.abs(gDistance))
+						&& (Math.abs(rDistance) >= Math.abs(bDistance))) {
+				// Red must be the largest.
+				r = changeColourValue(r, rDistance);
+			} else if (Math.abs(gDistance) >= Math.abs(bDistance)) {
+				// Green must be the largest.
+				g = changeColourValue(g, gDistance);
+			} else {
+				// Blue must be the largest.
+				b = changeColourValue(b, bDistance);
+			}
+		}
+		
+		return new Color(r, g, b);
+	}
+	
+	private int changeColourValue(int colourValue, int colourDistance) {
+		if (colourDistance < 0) {
+			return colourValue+1;
+		} else if (colourDistance > 0) {
+			return colourValue-1;
+		} else {
+			// This shouldn't actually happen here.
+			return colourValue;
 		}
 	}
 	
@@ -733,6 +791,8 @@ public class HeatChart {
 				{6,7,8,7,6,5,4,5,4,5,6,7,6,5,4,5}
 		};
 		
+		
+		
 		HeatChart chart = new HeatChart(data);
 		chart.setTitle("This is my chart title");
 		chart.setAxisWidth(2);
@@ -743,6 +803,9 @@ public class HeatChart {
 		chart.setXInterval(3.323442452223);
 		chart.setShowYAxisValues(true);
 		chart.setShowXAxisValues(true);
+		chart.setHighValueColour(new Color(0,255,135));
+		chart.setLowValueColour(new Color(126,0,135));
+		chart.setBackgroundColour(new Color(230, 230, 250));
 		
 		try {
 			chart.saveToFile(new File("test.png"));
