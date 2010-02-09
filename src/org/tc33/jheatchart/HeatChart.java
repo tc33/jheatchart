@@ -69,6 +69,7 @@ public class HeatChart {
 	private boolean showXAxisValues;
 	private boolean showYAxisValues;
 	
+	
 	private int heatMapWidth;
 	private int heatMapHeight;
 	
@@ -80,6 +81,8 @@ public class HeatChart {
 	 */
 	public HeatChart(double[][] data) {
 		this(data, 0.0, 0.0, 1.0, 1.0);
+		
+		
 	}
 	
 	/**
@@ -114,7 +117,7 @@ public class HeatChart {
 		this.axisLabelColour = Color.BLACK;
 		this.axisValuesColour = Color.BLACK;
 		this.axisValuesFont = new Font("Sans-Serif", Font.PLAIN, 10);
-		this.axisValuesMinFontSize = 6;
+		this.axisValuesMinFontSize = 7;
 		this.xAxisValuesInterval = 1;
 		this.xAxisValuesHeight = 0;
 		this.showXAxisValues = true;
@@ -722,12 +725,12 @@ public class HeatChart {
 
 	public static void main(String[] args) {
 		double[][] data = new double[][]{
-				{3,2,3,4,5,6,7,6},
-				{2,3,4,5,6,7,6,5},
-				{3,4,5,6,7,6,5,4},
-				{4,5,6,7,6,5,4,5},
-				{5,6,7,6,5,4,5,6},
-				{6,7,8,7,6,5,4,5}
+				{5,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6},
+				{4,3,4,5,6,7,6,5,4,5,6,5,4,3,4,5},
+				{3,4,5,6,7,6,5,4,5,6,5,4,3,2,3,4},
+				{4,5,6,7,6,5,4,5,6,7,6,5,4,3,5,6},
+				{5,6,7,6,5,4,5,6,5,6,7,6,5,4,6,7},
+				{6,7,8,7,6,5,4,5,4,5,6,7,6,5,4,5}
 		};
 		
 		HeatChart chart = new HeatChart(data);
@@ -736,10 +739,10 @@ public class HeatChart {
 		chart.setXAxisLabel("X Axis");
 		chart.setYAxisLabel("Y Axis");
 		chart.setChartMargin(20);
-		chart.setXAxisValuesInterval(1);
+		chart.setXAxisValuesInterval(2);
+		chart.setXInterval(3.323442452223);
 		chart.setShowYAxisValues(true);
 		chart.setShowXAxisValues(true);
-		//chart.setXInterval(1.3211222221233131213212323322222);
 		
 		try {
 			chart.saveToFile(new File("test.png"));
