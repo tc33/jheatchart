@@ -24,6 +24,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.math.*;
 
 import javax.imageio.ImageIO;
 
@@ -72,6 +73,8 @@ public class HeatChart {
 	private int yAxisValuesWidth;
 	private boolean showXAxisValues;
 	private boolean showYAxisValues;
+	private int xAxisValuesPrecision;
+	private int yAxisValuesPrecision;
 	
 	// How many RGB steps there are between the high and low colours.
 	private int colourValueDistance;
@@ -80,6 +83,9 @@ public class HeatChart {
 	
 	private int heatMapWidth;
 	private int heatMapHeight;
+	
+	// Shrink the chart size to fit if cell dimensions don't add up nicely to fill space.
+	private boolean flexibleChartSize;
 	
 	/**
 	 * Creates a heatmap for x values 0..data[0].length-1 and
@@ -130,10 +136,14 @@ public class HeatChart {
 		this.showYAxisValues = true;
 		this.yAxisValuesInterval = 1;
 		this.yAxisValuesWidth = 0;
+		this.xAxisValuesPrecision = 4;
+		this.yAxisValuesPrecision = 4;
 		
 		this.backgroundColour = Color.WHITE;
 		this.highValueColour = Color.BLACK;
 		this.lowValueColour = Color.WHITE;
+		
+		this.flexibleChartSize = true;
 		
 		updateColourDistance();
 	}
@@ -439,6 +449,30 @@ public class HeatChart {
 		colourValueDistance += Math.abs(b1 - b2);
 	}
 
+	public boolean isFlexibleChartSize() {
+		return flexibleChartSize;
+	}
+
+	public void setFlexibleChartSize(boolean flexibleChartSize) {
+		this.flexibleChartSize = flexibleChartSize;
+	}
+
+	public int getXAxisValuesPrecision() {
+		return xAxisValuesPrecision;
+	}
+
+	public void setXAxisValuesPrecision(int axisValuesPrecision) {
+		xAxisValuesPrecision = axisValuesPrecision;
+	}
+
+	public int getYAxisValuesPrecision() {
+		return yAxisValuesPrecision;
+	}
+
+	public void setYAxisValuesPrecision(int axisValuesPrecision) {
+		yAxisValuesPrecision = axisValuesPrecision;
+	}
+
 	public void saveToFile(File outputFile) throws IOException {
 		BufferedImage chart = (BufferedImage) getChartImage();
 		
@@ -483,6 +517,9 @@ public class HeatChart {
 		// Draw axis values.
 		drawXValues(chartGraphics);
 		drawYValues(chartGraphics);
+		
+		// We might not have used the full chart width/height so crop.
+		chartImage = cropToSize(chartImage);
 		
 		return chartImage;
 	}
@@ -607,7 +644,11 @@ public class HeatChart {
 		
 		for (int i=0; i<noXCells; i+=xAxisValuesInterval) {
 			double xValue = (i * xInterval) + xOffset;
-			String xValueStr = Double.toString(xValue);
+			
+			// Format to sf.
+			MathContext mc = new MathContext(xAxisValuesPrecision, RoundingMode.HALF_UP);
+		    BigDecimal bigDecimal = new BigDecimal(xValue, mc);
+		    String xValueStr = bigDecimal.toPlainString();
 			
 			Font font = new Font(axisValuesFont.getName(), 
 								 axisValuesFont.getStyle(), 
@@ -630,6 +671,7 @@ public class HeatChart {
 			int valueXPos = (i * cellWidth) + ((cellWidth / 2) - (valueWidth / 2));
 			valueXPos += (chartMargin + yAxisLabelWidth + axisWidth + yAxisValuesWidth);
 			int valueYPos = (chartMargin + titleHeight + heatMapHeight + metrics.getAscent() + 1);
+			
 			chartGraphics.drawString(xValueStr, valueXPos, valueYPos);
 		}
 	}
@@ -646,7 +688,11 @@ public class HeatChart {
 
 		for (int i=0; i<noYCells; i+=yAxisValuesInterval) {
 			double yValue = (i * yInterval) + yOffset;
-			String yValueStr = Double.toString(yValue);
+			
+			// Format to sf.
+			MathContext mc = new MathContext(yAxisValuesPrecision, RoundingMode.HALF_UP);
+		    BigDecimal bigDecimal = new BigDecimal(yValue, mc);
+		    String yValueStr = bigDecimal.toPlainString();
 			
 			Font font = new Font(axisValuesFont.getName(), 
 								 axisValuesFont.getStyle(), 
@@ -778,6 +824,19 @@ public class HeatChart {
 		}
 	}
 	
+	private BufferedImage cropToSize(BufferedImage chartImage) {
+		if (flexibleChartSize) {
+			chartWidth = (chartMargin*2) + yAxisLabelWidth + yAxisValuesWidth + axisWidth + heatMapWidth;
+			chartHeight = (chartMargin*2) + titleHeight + axisWidth + xAxisLabelHeight + xAxisValuesHeight + heatMapHeight;
+			
+			BufferedImage croppedImage = new BufferedImage(chartWidth, chartHeight, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D chartGraphics = croppedImage.createGraphics();
+			chartGraphics.drawImage(chartImage,0, 0, null);
+			chartImage = croppedImage;
+		}
+		return chartImage;
+	}
+	
 	private static double max(double[][] values) {
 		double max = 0;
 		for (int i=0; i<values.length; i++) {
@@ -800,12 +859,12 @@ public class HeatChart {
 
 	public static void main(String[] args) {
 		double[][] data = new double[][]{
-				{5,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6},
-				{4,3,4,5,6,7,6,5,4,5,6,5,4,3,4,5},
-				{3,4,5,6,7,6,5,4,5,6,5,4,3,2,3,4},
-				{4,5,6,7,6,5,4,5,6,7,6,5,4,3,5,6},
-				{5,6,7,6,5,4,5,6,5,6,7,6,5,4,6,7},
-				{6,7,8,7,6,5,4,5,4,5,6,7,6,5,4,5}
+				{5,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6},
+				{4,3,4,5,6,7,6,5,4,5,6,5,4,3,4,5,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6},
+				{3,4,5,6,7,6,5,4,5,6,5,4,3,2,3,4,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6},
+				{4,5,6,7,6,5,4,5,6,7,6,5,4,3,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6},
+				{5,6,7,6,5,4,5,6,5,6,7,6,5,4,6,7,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6},
+				{6,7,8,7,6,5,4,5,4,5,6,7,6,5,4,5,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6}
 		};
 		
 		
@@ -816,8 +875,9 @@ public class HeatChart {
 		chart.setXAxisLabel("X Axis");
 		chart.setYAxisLabel("Y Axis");
 		chart.setChartMargin(20);
-		chart.setXAxisValuesInterval(2);
+		chart.setXAxisValuesInterval(10);
 		chart.setXInterval(3.323442452223);
+		chart.setYOffset(0.2);
 		chart.setShowYAxisValues(true);
 		chart.setShowXAxisValues(true);
 		chart.setHighValueColour(new Color(0,255,135));
