@@ -166,6 +166,14 @@ public class HeatChart {
 	// Shrink the chart size to fit if cell dimensions don't add up nicely to fill space.
 	private boolean flexibleChartSize;
 	
+	private Scale colourScale;
+	
+	public enum Scale {
+		LOGARITHMIC,
+		EXPONENTIAL,
+		LINEAR
+	}
+	
 	/**
 	 * Creates a heatmap for x-values from 0 to zValues[0].length-1 and
 	 * y-values from 0 to zValues.length-1.
@@ -227,6 +235,8 @@ public class HeatChart {
 		this.flexibleChartSize = true;
 		
 		updateColourDistance();
+		
+		this.colourScale = Scale.LINEAR;
 	}
 	
 	public void setData(double[][] data) {
@@ -517,6 +527,20 @@ public class HeatChart {
 		updateColourDistance();
 	}
 	
+	/**
+	 * @return the colourScale
+	 */
+	public Scale getColourScale() {
+		return colourScale;
+	}
+
+	/**
+	 * @param colourScale the colourScale to set
+	 */
+	public void setColourScale(Scale colourScale) {
+		this.colourScale = colourScale;
+	}
+
 	private void updateColourDistance() {
 		int r1 = lowValueColour.getRed();
 		int g1 = lowValueColour.getGreen();
@@ -874,13 +898,13 @@ public class HeatChart {
 		double percentPosition = position / range;
 		
 		// Which colour group does that put us in.
-		int colourPosition = (int) Math.floor(percentPosition * colourValueDistance);
+		int colourPosition = getColourPosition(percentPosition);
 		
 		int r = lowValueColour.getRed();
 		int g = lowValueColour.getGreen();
 		int b = lowValueColour.getBlue();
 		
-		// Make i shifts of the colour, where i is the colourPosition.
+		// Make n shifts of the colour, where n is the colourPosition.
 		for (int i=0; i<colourPosition; i++) {
 			int rDistance = r - highValueColour.getRed();
 			int gDistance = g - highValueColour.getGreen();
@@ -900,6 +924,27 @@ public class HeatChart {
 		}
 		
 		return new Color(r, g, b);
+	}
+	
+	/*
+	 * Returns how many colour shifts are required from the lowValueColour to 
+	 * get to the correct colour position. The result will be different 
+	 * depending on the colour scale used: LINEAR, LOGARITHMIC, EXPONENTIAL.
+	 */
+	private int getColourPosition(double percentPosition) {
+		int colourPosition;
+		
+		// Which colour group does that put us in.
+		if (colourScale == Scale.LOGARITHMIC) {
+			colourPosition = (int) Math.round((colourValueDistance / Math.log10(2.0)) * Math.log10(percentPosition+1));
+		} else if (colourScale == Scale.EXPONENTIAL) {
+			colourPosition = (int) Math.round(Math.pow(10.0, (percentPosition * Math.log10(colourValueDistance+1))) - 1);
+		} else {
+			// Use a linear scale.
+			colourPosition = (int) Math.floor(percentPosition * colourValueDistance);
+		}
+		
+		return colourPosition;
 	}
 	
 	private int changeColourValue(int colourValue, int colourDistance) {
