@@ -144,7 +144,7 @@ public class HeatChart {
 	private Color axisValuesColour;
 	private Font axisValuesFont; // The font size will be considered the maximum font size - it may be smaller if needed to fit in.
 	private int axisValuesMinFontSize;
-	private int xAxisValuesInterval;
+	private int xAxisValuesFrequency;
 	private int xAxisValuesHeight;
 	private int yAxisValuesInterval;
 	private int yAxisValuesWidth;
@@ -246,15 +246,15 @@ public class HeatChart {
 		this.axisLabelColour = Color.BLACK;
 		this.axisValuesColour = Color.BLACK;
 		this.axisValuesFont = new Font("Sans-Serif", Font.PLAIN, 10);
-		this.axisValuesMinFontSize = 7;
-		this.xAxisValuesInterval = 1;
+		this.axisValuesMinFontSize = 6;
+		this.xAxisValuesFrequency = 1;
 		this.xAxisValuesHeight = 0;
 		this.showXAxisValues = true;
 		this.showYAxisValues = true;
 		this.yAxisValuesInterval = 1;
 		this.yAxisValuesWidth = 0;
-		this.xAxisValuesPrecision = 4;
-		this.yAxisValuesPrecision = 4;
+		this.xAxisValuesPrecision = 3;
+		this.yAxisValuesPrecision = 3;
 		
 		// Default heatmap settings.
 		this.highValueColour = Color.BLACK;
@@ -743,6 +743,9 @@ public class HeatChart {
 	 * Sets the font that describes the visual style of the axis labels. Both 
 	 * axis' labels use the same font.
 	 * 
+	 * <p>
+	 * Defaults to Sans-Serif, PLAIN, 12 pixels.
+	 * 
 	 * @param axisLabelsFont the font to be used to define the visual style of 
 	 * the axis labels.
 	 */
@@ -750,84 +753,298 @@ public class HeatChart {
 		this.axisLabelsFont = axisLabelsFont;
 	}
 
+	/**
+	 * Returns the current colour of the axis labels. Both labels use the same
+	 * colour.
+	 * 
+	 * @return the colour of the axis label text.
+	 */
 	public Color getAxisLabelColour() {
 		return axisLabelColour;
 	}
 
+	/**
+	 * Sets the colour of the text displayed as axis labels. Both labels use 
+	 * the same colour.
+	 * 
+	 * <p>
+	 * Defaults to Color.BLACK.
+	 * 
+	 * @param axisLabelColour the colour to use for the axis label text.
+	 */
 	public void setAxisLabelColour(Color axisLabelColour) {
 		this.axisLabelColour = axisLabelColour;
 	}
 
+	/**
+	 * Returns the font which describes the visual style of the axis values. 
+	 * The axis values are those values displayed alongside the axis bars at 
+	 * regular intervals. Both axis use the same font.
+	 * 
+	 * <p>
+	 * The font family and font style are used explicitly, but the font size 
+	 * is considered a preferred maximum. If the value does not fit within the 
+	 * cell boundaries at this size then it will be shrunk down to the greatest
+	 * size that fits, or the axisValuesMinFontSize settings. Whichever is the 
+	 * larger.
+	 * 
+	 * @return the font in use for the axis values.
+	 */
 	public Font getAxisValuesFont() {
 		return axisValuesFont;
 	}
 
+	/**
+	 * Sets the font which describes the visual style of the axis values. The 
+	 * axis values are those values displayed alongside the axis bars at 
+	 * regular intervals. Both axis use the same font.
+	 * 
+	 * <p>
+	 * The font family and font style set here are used explicitly, but the 
+	 * font size is considered a preferred maximum. If the value does not fit 
+	 * within the cell boundaries at this size then it will be shrunk down to 
+	 * the greatest size that fits, or the axisValuesMinFontSize settings. 
+	 * Whichever is the larger.
+	 * 
+	 * <p>
+	 * Defaults to Sans-Serif, PLAIN, 10 pixels.
+	 * 
+	 * @param axisValuesFont the font that should be used for the axis values.
+	 */
 	public void setAxisValuesFont(Font axisValuesFont) {
 		this.axisValuesFont = axisValuesFont;
 	}
 
+	/**
+	 * Returns the colour of the axis values as they will be painted along the 
+	 * axis bars. Both axis use the same colour.
+	 * 
+	 * @return the colour of the values displayed along the axis bars.
+	 */
 	public Color getAxisValuesColour() {
 		return axisValuesColour;
 	}
 
+	/**
+	 * Sets the colour to be used for the axis values as they will be painted 
+	 * along the axis bars. Both axis use the same colour.
+	 * 
+	 * <p>
+	 * Defaults to Color.BLACK.
+	 * 
+	 * @param axisValuesColour the new colour to be used for the axis bar values.
+	 */
 	public void setAxisValuesColour(Color axisValuesColour) {
 		this.axisValuesColour = axisValuesColour;
 	}
 
+	/**
+	 * Returns the minimum font size that should be used for the axis values. 
+	 * The maximum font size is provided through the axisValuesFont setting. If
+	 * using the maximum font setting results in the value breaking its cell 
+	 * bounds then a smaller font size is tried, down to this minimum size.
+	 * 
+	 * @return the minimum font size in pixels that will be used for the axis 
+	 * values.
+	 */
 	public int getAxisValuesMinFontSize() {
 		return axisValuesMinFontSize;
 	}
 
+	/**
+	 * Sets the minimum font size that should be used for the axis values. 
+	 * The maximum font size is provided through the axisValuesFont setting. If
+	 * using the maximum font setting results in the value breaking its cell 
+	 * bounds then a smaller font size is tried, down to this minimum size.
+	 * 
+	 * <p>
+	 * Defaults to 6 pixels.
+	 * 
+	 * @param axisValuesMinFontSize the minimum font size in pixels that should
+	 * be used in display of the axis values.
+	 */
 	public void setAxisValuesMinFontSize(int axisValuesMinFontSize) {
 		this.axisValuesMinFontSize = axisValuesMinFontSize;
 	}
 
-	public int getXAxisValuesInterval() {
-		return xAxisValuesInterval;
+	/**
+	 * Returns the frequency of the values displayed along the x-axis. The 
+	 * frequency is how many columns in the x-dimension are given a value. A 
+	 * frequency of 2 would mean every other column has a value and a frequency 
+	 * of 3 would mean every third column would be given a value.
+	 * 
+	 * @return the frequency of the values displayed against columns.
+	 */
+	public int getXAxisValuesFrequency() {
+		return xAxisValuesFrequency;
 	}
 
-	public void setXAxisValuesInterval(int axisValuesInterval) {
-		xAxisValuesInterval = axisValuesInterval;
+	/**
+	 * Sets the frequency of the values displayed along the x-axis. The 
+	 * frequency is how many columns in the x-dimension are given a value. A 
+	 * frequency of 2 would mean every other column has a value and a frequency 
+	 * of 3 would mean every third column would be given a value.
+	 * 
+	 * <p>
+	 * Defaults to 1. Every column is given a value.
+	 * 
+	 * @param axisValuesFrequency the frequency of the values displayed against
+	 * columns, where 1 is every column and 2 is every other column.
+	 */
+	public void setXAxisValuesFrequency(int axisValuesFrequency) {
+		xAxisValuesFrequency = axisValuesFrequency;
 	}
 
+	/**
+	 * Returns the frequency of the values displayed along the y-axis. The 
+	 * frequency is how many rows in the y-dimension are given a value. A 
+	 * frequency of 2 would mean every other row has a value and a frequency 
+	 * of 3 would mean every third row would be given a value.
+	 * 
+	 * @return the frequency of the values displayed against rows.
+	 */
 	public int getYAxisValuesInterval() {
 		return yAxisValuesInterval;
 	}
 
+	/**
+	 * Sets the frequency of the values displayed along the y-axis. The 
+	 * frequency is how many rows in the y-dimension are given a value. A 
+	 * frequency of 2 would mean every other row has a value and a frequency 
+	 * of 3 would mean every third row would be given a value.
+	 * 
+	 * <p>
+	 * Defaults to 1. Every row is given a value.
+	 * 
+	 * @param axisValuesFrequency the frequency of the values displayed against
+	 * rows, where 1 is every row and 2 is every other row.
+	 */
 	public void setYAxisValuesInterval(int axisValuesInterval) {
 		yAxisValuesInterval = axisValuesInterval;
 	}
 
+	/**
+	 * Returns whether axis values are to be shown at all for the x-axis.
+	 * 
+	 * <p>
+	 * If axis values are not shown then more space is allocated to the heat 
+	 * map.
+	 * 
+	 * @return true if the x-axis values will be displayed, false otherwise.
+	 */
 	public boolean isShowXAxisValues() {
 		return showXAxisValues;
 	}
 
+	/**
+	 * Sets whether axis values are to be shown at all for the x-axis.
+	 * 
+	 * <p>
+	 * If axis values are not shown then more space is allocated to the heat 
+	 * map.
+	 * 
+	 * <p>
+	 * Defaults to true.
+	 * 
+	 * @param showXAxisValues true if x-axis values should be displayed, false 
+	 * if they should be hidden.
+	 */
 	public void setShowXAxisValues(boolean showXAxisValues) {
 		this.showXAxisValues = showXAxisValues;
 	}
 
+	/**
+	 * Returns whether axis values are to be shown at all for the y-axis.
+	 * 
+	 * <p>
+	 * If axis values are not shown then more space is allocated to the heat 
+	 * map.
+	 * 
+	 * @return true if the y-axis values will be displayed, false otherwise.
+	 */
 	public boolean isShowYAxisValues() {
 		return showYAxisValues;
 	}
 
+	/**
+	 * Sets whether axis values are to be shown at all for the y-axis.
+	 * 
+	 * <p>
+	 * If axis values are not shown then more space is allocated to the heat 
+	 * map.
+	 * 
+	 * <p>
+	 * Defaults to true.
+	 * 
+	 * @param showYAxisValues true if y-axis values should be displayed, false 
+	 * if they should be hidden.
+	 */
 	public void setShowYAxisValues(boolean showYAxisValues) {
 		this.showYAxisValues = showYAxisValues;
 	}
 
+	/**
+	 * Returns the colour that is currently to be displayed for the heat map 
+	 * cells with the highest z-value in the dataset.
+	 * 
+	 * <p>
+	 * The full colour range will go through each RGB step between the high 
+	 * value colour and the low value colour.
+	 * 
+	 * @return the colour in use for cells of the highest z-value.
+	 */
 	public Color getHighValueColour() {
 		return highValueColour;
 	}
 
+	/**
+	 * Sets the colour to be used to fill cells of the heat map with the 
+	 * highest z-values in the dataset.
+	 * 
+	 * <p>
+	 * The full colour range will go through each RGB step between the high 
+	 * value colour and the low value colour.
+	 * 
+	 * <p>
+	 * Defaults to Color.BLACK.
+	 * 
+	 * @param highValueColour the colour to use for cells of the highest 
+	 * z-value.
+	 */
 	public void setHighValueColour(Color highValueColour) {
 		this.highValueColour = highValueColour;
 		
 		updateColourDistance();
 	}
 	
+	/**
+	 * Returns the colour that is currently to be displayed for the heat map 
+	 * cells with the lowest z-value in the dataset.
+	 * 
+	 * <p>
+	 * The full colour range will go through each RGB step between the high 
+	 * value colour and the low value colour.
+	 * 
+	 * @return the colour in use for cells of the lowest z-value.
+	 */
 	public Color getLowValueColour() {
 		return lowValueColour;
 	}
 
+	/**
+	 * Sets the colour to be used to fill cells of the heat map with the 
+	 * lowest z-values in the dataset.
+	 * 
+	 * <p>
+	 * The full colour range will go through each RGB step between the high 
+	 * value colour and the low value colour.
+	 * 
+	 * <p>
+	 * Defaults to Color.WHITE.
+	 * 
+	 * @param lowValueColour the colour to use for cells of the lowest 
+	 * z-value.
+	 */
 	public void setLowValueColour(Color lowValueColour) {
 		this.lowValueColour = lowValueColour;
 		
@@ -835,14 +1052,34 @@ public class HeatChart {
 	}
 	
 	/**
-	 * @return the colourScale
+	 * Returns the scale that is currently in use to map z-value to colour. A 
+	 * <strong>linear</strong> scale, which is used by default, will spread the 
+	 * distribution of colours evenly amoungst the full range of represented 
+	 * z-values. A <strong>logarithmic</strong> scale, will provide greater 
+	 * emphasis for the separation between low values, while sacrificing detail 
+	 * for high values. An <strong>exponential</strong> scale will do the 
+	 * reverse and provide greater separation to higher values.
+	 * 
+	 * @return the scale that is being used to map from z-value to colour.
 	 */
 	public Scale getColourScale() {
 		return colourScale;
 	}
 
 	/**
-	 * @param colourScale the colourScale to set
+	 * Sets the scale that should be used to map z-value to colour. A 
+	 * <strong>linear</strong> scale, which is used by default, will spread the 
+	 * distribution of colours evenly amoungst the full range of represented 
+	 * z-values. A <strong>logarithmic</strong> scale, will provide greater 
+	 * emphasis for the separation between low values, while sacrificing detail 
+	 * for high values. An <strong>exponential</strong> scale will do the 
+	 * reverse and provide greater separation to higher values.
+	 * 
+	 * <p>
+	 * Defaults to Scale.LINEAR.
+	 * 
+	 * @param colourScale the scale that should be used to map from z-value to 
+	 * colour.
 	 */
 	public void setColourScale(Scale colourScale) {
 		this.colourScale = colourScale;
@@ -867,31 +1104,132 @@ public class HeatChart {
 		colourValueDistance += Math.abs(b1 - b2);
 	}
 
+	/**
+	 * Returns whether flexible chart sizing is in use. If flexible chart 
+	 * sizing is used then the final chart image dimensions may differ from the 
+	 * chart width and chart height settings.
+	 * 
+	 * <p>
+	 * Flexible chart sizing is useful where the available width for the heat 
+	 * map does not divide neatly by the number of cells, thus leaving excess 
+	 * space around the heat map.
+	 * 
+	 * @return true if the chart size could be changed to fit the dataset, 
+	 * false otherwise.
+	 */
 	public boolean isFlexibleChartSize() {
 		return flexibleChartSize;
 	}
 
-	// Shrink the chart size to fit if cell dimensions don't add up nicely to fill space.
+	/**
+	 * Sets whether flexible chart sizing should be used. If flexible chart 
+	 * sizing is used then the final chart image dimensions may differ from the 
+	 * chart width and chart height settings.
+	 * 
+	 * <p>
+	 * Flexible chart sizing is useful where the available width for the heat 
+	 * map does not divide neatly by the number of cells, thus leaving excess 
+	 * space around the heat map.
+	 * 
+	 * <p>
+	 * Defaults to <tt>true</tt> - using flexible sizing.
+	 * 
+	 * @param flexibleChartSize true if flexible chart sizing should be used, 
+	 * false otherwise.
+	 */
 	public void setFlexibleChartSize(boolean flexibleChartSize) {
 		this.flexibleChartSize = flexibleChartSize;
 	}
 
+	/**
+	 * Returns the precision of the displayed x-axis values. Values will be
+	 * rounded (half-up) to this precision for display.
+	 * 
+	 * <p>
+	 * The precision is currently defined as the number of significant figures. 
+	 * This is liable to change at some point.
+	 * 
+	 * @return the precision in use for values along the x-axis.
+	 */
 	public int getXAxisValuesPrecision() {
 		return xAxisValuesPrecision;
 	}
 
+	/**
+	 * Sets the precision of the displayed x-axis values. Values will be
+	 * rounded (half-up) to this precision for display.
+	 * 
+	 * <p>
+	 * The precision is currently defined as the number of significant figures. 
+	 * This is liable to change at some point.
+	 * 
+	 * <p>
+	 * Defaults to 2 s.f.
+	 * 
+	 * @param axisValuesPrecision the level of precision to use for displayed
+	 * x-axis values.
+	 */
 	public void setXAxisValuesPrecision(int axisValuesPrecision) {
 		xAxisValuesPrecision = axisValuesPrecision;
 	}
 
+	/**
+	 * Returns the precision of the displayed y-axis values. Values will be
+	 * rounded (half-up) to this precision for display.
+	 * 
+	 * <p>
+	 * The precision is currently defined as the number of significant figures. 
+	 * This is liable to change at some point.
+	 * 
+	 * @return the precision in use for values along the y-axis.
+	 */
 	public int getYAxisValuesPrecision() {
 		return yAxisValuesPrecision;
 	}
 
+	/**
+	 * Sets the precision of the displayed y-axis values. Values will be
+	 * rounded (half-up) to this precision for display.
+	 * 
+	 * <p>
+	 * The precision is currently defined as the number of significant figures. 
+	 * This is liable to change at some point.
+	 * 
+	 * <p>
+	 * Defaults to 2 s.f.
+	 * 
+	 * @param axisValuesPrecision the level of precision to use for displayed
+	 * y-axis values.
+	 */
 	public void setYAxisValuesPrecision(int axisValuesPrecision) {
 		yAxisValuesPrecision = axisValuesPrecision;
 	}
 
+	/**
+	 * Generates a new chart <code>Image</code> based upon the currently held 
+	 * settings and then attempts to save that image to disk, to the location 
+	 * provided as a File parameter. The image type of the saved file will 
+	 * equal the extension of the filename provided, so it is essential that a 
+	 * suitable extension be included on the file name.
+	 * 
+	 * <p>
+	 * All supported <code>ImageIO</code> file types are supported, including 
+	 * PNG, JPG and GIF.
+	 * 
+	 * <p>
+	 * No chart will be generated until this or the related 
+	 * <code>getChartImage()</code> method are called. All successive calls 
+	 * will result in the generation of a new chart image, no caching is used.
+	 * 
+	 * @param outputFile the file location that the generated image file should 
+	 * be written to. The File must have a suitable filename, with an extension
+	 * of a valid image format (as supported by <code>ImageIO</code>).
+	 * @throws IOException if the output file's filename has no extension or 
+	 * if there the file is unable to written to. Reasons for this include a 
+	 * non-existant file location (check with the File exists() method on the 
+	 * parent directory), or the permissions of the write location may be 
+	 * incorrect.
+	 */
 	public void saveToFile(File outputFile) throws IOException {
 		BufferedImage chart = (BufferedImage) getChartImage();
 
@@ -910,6 +1248,18 @@ public class HeatChart {
 		ImageIO.write(chart, ext, outputFile);
 	}
 	
+	/**
+	 * Generates and returns a new chart <code>Image</code> configured 
+	 * according to this object's currently held settings.
+	 * 
+	 * <p>
+	 * No chart will be generated until this or the related 
+	 * <code>saveToFile(File)</code> method are called. All successive calls 
+	 * will result in the generation of a new chart image, no caching is used.
+	 * 
+	 * @return A newly generated chart <code>Image</code>. The returned image 
+	 * is a <code>BufferedImage</code>.
+	 */
 	public Image getChartImage() {
 		// Create our chart image which we will eventually draw everything on.
 		BufferedImage chartImage = new BufferedImage(chartWidth, chartHeight, BufferedImage.TYPE_INT_ARGB);
@@ -1092,7 +1442,7 @@ public class HeatChart {
 		
 		chartGraphics.setColor(axisValuesColour);
 		
-		for (int i=0; i<noXCells; i+=xAxisValuesInterval) {
+		for (int i=0; i<noXCells; i+=xAxisValuesFrequency) {
 			double xValue = (i * xInterval) + xOffset;
 			
 			// Format to sf.
