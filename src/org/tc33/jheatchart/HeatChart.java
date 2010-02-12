@@ -146,7 +146,7 @@ public class HeatChart {
 	private int axisValuesMinFontSize;
 	private int xAxisValuesFrequency;
 	private int xAxisValuesHeight;
-	private int yAxisValuesInterval;
+	private int yAxisValuesFrequency;
 	private int yAxisValuesWidth;
 	private int xAxisValuesPrecision;
 	private int yAxisValuesPrecision;
@@ -251,7 +251,7 @@ public class HeatChart {
 		this.xAxisValuesHeight = 0;
 		this.showXAxisValues = true;
 		this.showYAxisValues = true;
-		this.yAxisValuesInterval = 1;
+		this.yAxisValuesFrequency = 1;
 		this.yAxisValuesWidth = 0;
 		this.xAxisValuesPrecision = 3;
 		this.yAxisValuesPrecision = 3;
@@ -903,8 +903,8 @@ public class HeatChart {
 	 * 
 	 * @return the frequency of the values displayed against rows.
 	 */
-	public int getYAxisValuesInterval() {
-		return yAxisValuesInterval;
+	public int getYAxisValuesFrequency() {
+		return yAxisValuesFrequency;
 	}
 
 	/**
@@ -919,8 +919,8 @@ public class HeatChart {
 	 * @param axisValuesFrequency the frequency of the values displayed against
 	 * rows, where 1 is every row and 2 is every other row.
 	 */
-	public void setYAxisValuesInterval(int axisValuesInterval) {
-		yAxisValuesInterval = axisValuesInterval;
+	public void setYAxisValuesFrequency(int axisValuesFrequency) {
+		yAxisValuesFrequency = axisValuesFrequency;
 	}
 
 	/**
@@ -1489,7 +1489,7 @@ public class HeatChart {
 		
 		chartGraphics.setColor(axisValuesColour);
 
-		for (int i=0; i<noYCells; i+=yAxisValuesInterval) {
+		for (int i=0; i<noYCells; i+=yAxisValuesFrequency) {
 			double yValue = (i * yInterval) + yOffset;
 			
 			// Format to sf.
