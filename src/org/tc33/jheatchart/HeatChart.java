@@ -113,6 +113,21 @@ import javax.imageio.ImageIO;
  */
 public class HeatChart {
 	
+	/**
+	 * A basic logarithmic scale value of 0.3.
+	 */
+	public static final double SCALE_LOGARITHMIC = 0.3;
+	
+	/**
+	 * The linear scale value of 1.0.
+	 */
+	public static final double SCALE_LINEAR = 1.0;
+	
+	/**
+	 * A basic exponential scale value of 3.0.
+	 */
+	public static final double SCALE_EXPONENTIAL = 3;
+	
 	// x, y, z data values.
 	private double[][] zValues;
 	private double xOffset;
@@ -170,23 +185,8 @@ public class HeatChart {
 	private int heatMapWidth;
 	private int heatMapHeight;
 	
-	private Scale colourScale;
-	
-	/**
-	 * Incremental scales. These are used in <code>HeatChart</code> to define 
-	 * the spread of colours used in the heat map. A linear scale will evenly 
-	 * spread the colours throughout the range of possible values. Logarithmic 
-	 * scales will provide greater separation of small z-values, and 
-	 * exponential scales will provide greater spread of larger z-values.
-	 * 
-	 * <p>
-	 * Logarithmic and scales are not fully supported currently.
-	 */
-	public enum Scale {
-		LOGARITHMIC,
-		EXPONENTIAL,
-		LINEAR
-	}
+	// Control variable for mapping z-values to colours.
+	private double colourScale;
 	
 	/**
 	 * Creates a heatmap for x-values from 0 to zValues[0].length-1 and
@@ -259,7 +259,7 @@ public class HeatChart {
 		// Default heatmap settings.
 		this.highValueColour = Color.BLACK;
 		this.lowValueColour = Color.WHITE;
-		this.colourScale = Scale.LINEAR;		
+		this.colourScale = SCALE_LINEAR;
 		
 		updateColourDistance();
 	}
@@ -920,7 +920,7 @@ public class HeatChart {
 	 * rows, where 1 is every row and 2 is every other row.
 	 */
 	public void setYAxisValuesFrequency(int axisValuesFrequency) {
-		yAxisValuesFrequency = axisValuesFrequency;
+		yAxisValuesFrequency = axisValuesFrequency; 
 	}
 
 	/**
@@ -1053,35 +1053,37 @@ public class HeatChart {
 	
 	/**
 	 * Returns the scale that is currently in use to map z-value to colour. A 
-	 * <strong>linear</strong> scale, which is used by default, will spread the 
-	 * distribution of colours evenly amoungst the full range of represented 
-	 * z-values. A <strong>logarithmic</strong> scale, will provide greater 
-	 * emphasis for the separation between low values, while sacrificing detail 
-	 * for high values. An <strong>exponential</strong> scale will do the 
-	 * reverse and provide greater separation to higher values.
-	 * 
-	 * @return the scale that is being used to map from z-value to colour.
+	 * value of 1.0 will give a <strong>linear</strong> scale, which will 
+	 * spread the distribution of colours evenly amoungst the full range of 
+	 * represented z-values. A value of greater than 1.0 will give an 
+	 * <strong>exponential</strong> scale that will produce greater emphasis 
+	 * for the separation between higher values and a value between 0.0 and 1.0
+	 * will provide a <strong>logarithmic</strong> scale, with greater 
+	 * separation of low values.
+	 *  
+	 * @return the scale factor that is being used to map from z-value to colour.
 	 */
-	public Scale getColourScale() {
+	public double getColourScale() {
 		return colourScale;
 	}
 
 	/**
-	 * Sets the scale that should be used to map z-value to colour. A 
-	 * <strong>linear</strong> scale, which is used by default, will spread the 
-	 * distribution of colours evenly amoungst the full range of represented 
-	 * z-values. A <strong>logarithmic</strong> scale, will provide greater 
-	 * emphasis for the separation between low values, while sacrificing detail 
-	 * for high values. An <strong>exponential</strong> scale will do the 
-	 * reverse and provide greater separation to higher values.
+	 * Sets the scale that is currently in use to map z-value to colour. A 
+	 * value of 1.0 will give a <strong>linear</strong> scale, which will 
+	 * spread the distribution of colours evenly amoungst the full range of 
+	 * represented z-values. A value of greater than 1.0 will give an 
+	 * <strong>exponential</strong> scale that will produce greater emphasis 
+	 * for the separation between higher values and a value between 0.0 and 1.0
+	 * will provide a <strong>logarithmic</strong> scale, with greater 
+	 * separation of low values. Values of 0.0 or less are illegal.
 	 * 
 	 * <p>
-	 * Defaults to Scale.LINEAR.
+	 * Defaults to a linear scale value of 1.0.
 	 * 
 	 * @param colourScale the scale that should be used to map from z-value to 
 	 * colour.
 	 */
-	public void setColourScale(Scale colourScale) {
+	public void setColourScale(double colourScale) {
 		this.colourScale = colourScale;
 	}
 
@@ -1625,17 +1627,20 @@ public class HeatChart {
 	 * depending on the colour scale used: LINEAR, LOGARITHMIC, EXPONENTIAL.
 	 */
 	private int getColourPosition(double percentPosition) {
-		int colourPosition;
+		int colourPosition = (int) Math.round(colourValueDistance * Math.pow(percentPosition, colourScale));
 		
 		// Which colour group does that put us in.
-		if (colourScale == Scale.LOGARITHMIC) {
-			colourPosition = (int) Math.round((colourValueDistance / Math.log10(2.0)) * Math.log10(percentPosition+1));
+		/*if (colourScale == Scale.LOGARITHMIC) {
+			// 167*(logn(500x+1,10))/(logn(500+1,10));
+			int steepness = 500;
+			colourPosition = (int) Math.round(colourValueDistance * (logn(steepness*percentPosition+1,10))/(logn(steepness+1,10)));
+			//colourPosition = (int) Math.round((colourValueDistance / Math.log10(2.0)) * Math.log10(percentPosition+1));
 		} else if (colourScale == Scale.EXPONENTIAL) {
 			colourPosition = (int) Math.round(Math.pow(10.0, (percentPosition * Math.log10(colourValueDistance+1))) - 1);
 		} else {
 			// Use a linear scale.
 			colourPosition = (int) Math.floor(percentPosition * colourValueDistance);
-		}
+		}*/
 		
 		return colourPosition;
 	}
@@ -1664,6 +1669,9 @@ public class HeatChart {
 		return chartImage;
 	}
 	
+	/*
+	 * Determine maximum value in a 2-dimensional array of doubles.
+	 */
 	private static double max(double[][] values) {
 		double max = 0;
 		for (int i=0; i<values.length; i++) {
@@ -1674,6 +1682,9 @@ public class HeatChart {
 		return max;
 	}
 	
+	/*
+	 * Determine minimum value in a 2-dimensional array of doubles.
+	 */
 	private static double min(double[][] values) {
 		double min = Double.MAX_VALUE;
 		for (int i=0; i<values.length; i++) {
@@ -1682,6 +1693,13 @@ public class HeatChart {
 			}
 		}
 		return min;
+	}
+	
+	/*
+	 * Calculate log to any base.
+	 */
+	private static double logn(double value, double base) {
+		return Math.log(value)/Math.log(base);
 	}
 
 	/*public static void main(String[] args) {
