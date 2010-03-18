@@ -25,8 +25,10 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.math.*;
+import java.util.*;
 
-import javax.imageio.ImageIO;
+import javax.imageio.*;
+import javax.imageio.stream.*;
 
 /**
  * The <code>HeatChart</code> class describes a chart which can display 
@@ -1247,7 +1249,28 @@ public class HeatChart {
 		String ext = filename.substring(extPoint + 1);		
 
 		// Save our graphic.
-		ImageIO.write(chart, ext, outputFile);
+		if (ext.toLowerCase().equals("jpg") || ext.toLowerCase().equals("jpeg")) {
+			saveGraphicJpeg(chart, outputFile, 1.0f);
+		} else {
+			ImageIO.write(chart, ext, outputFile);
+		}
+	}
+	
+	private void saveGraphicJpeg(BufferedImage chart, File outputFile, float quality) throws IOException {
+		// Setup correct compression for jpeg.
+		Iterator<ImageWriter> iter = ImageIO.getImageWritersByFormatName("jpeg");
+		ImageWriter writer = (ImageWriter) iter.next();
+		ImageWriteParam iwp = writer.getDefaultWriteParam();
+		iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+		iwp.setCompressionQuality(quality);
+		
+		// Output the image.
+		FileImageOutputStream output = new FileImageOutputStream(outputFile);
+		writer.setOutput(output);
+		IIOImage image = new IIOImage(chart, null, null);
+		writer.write(null, image, iwp);
+		writer.dispose();
+		
 	}
 	
 	/**
@@ -1264,7 +1287,8 @@ public class HeatChart {
 	 */
 	public Image getChartImage() {
 		// Create our chart image which we will eventually draw everything on.
-		BufferedImage chartImage = new BufferedImage(chartWidth, chartHeight, BufferedImage.TYPE_INT_ARGB);
+		// Using BufferedImage.TYPE_INT_ARGB seems to break on jpg.
+		BufferedImage chartImage = new BufferedImage(chartWidth, chartHeight, BufferedImage.TYPE_3BYTE_BGR);
 		Graphics2D chartGraphics = chartImage.createGraphics();
 		
 		// Use anti-aliasing where ever possible.
