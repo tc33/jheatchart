@@ -24,11 +24,10 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.math.*;
-import java.util.*;
+import java.util.Iterator;
 
 import javax.imageio.*;
-import javax.imageio.stream.*;
+import javax.imageio.stream.FileImageOutputStream;
 
 /**
  * The <code>HeatChart</code> class describes a chart which can display 
@@ -132,10 +131,11 @@ public class HeatChart {
 	
 	// x, y, z data values.
 	private double[][] zValues;
-	private double xOffset;
-	private double yOffset;
-	private double xInterval;
-	private double yInterval;
+	private Object[] xValues;
+	private Object[] yValues;
+	
+	private boolean xValuesHorizontal;
+	private boolean yValuesHorizontal;
 	
 	// General chart settings.
 	private int cellWidth;
@@ -165,14 +165,15 @@ public class HeatChart {
 	private Font axisValuesFont; // The font size will be considered the maximum font size - it may be smaller if needed to fit in.
 	private int xAxisValuesFrequency;
 	private int yAxisValuesFrequency;
-	private int xAxisValuesPrecision;
-	private int yAxisValuesPrecision;
 	private boolean showXAxisValues;
 	private boolean showYAxisValues;
 	
 	// Generated axis properties.
 	private int xAxisValuesHeight;
 	private int yAxisValuesHeight;
+	private int yAxisValuesAscent;
+	private int xAxisValuesWidthMax;
+	private int yAxisValuesWidthMax;
 	private int xAxisLabelHeight;
 	private int xAxisLabelWidth;
 	private int xAxisLabelDescent;
@@ -195,42 +196,20 @@ public class HeatChart {
 	private double colourScale;
 	
 	/**
-	 * Creates a heatmap for x-values from 0 to zValues[0].length-1 and
-	 * y-values from 0 to zValues.length-1.
-	 * 
-	 * <p>For a full explanation of the way x/y-values are determined from the 
-	 * z-values, see the class JavaDoc above.
+	 * Creates a heatmap for the given z-values against x/y-values that by 
+	 * default will be the values 0 to n-1, where n is the number of columns or 
+	 * rows.
 	 * 
 	 * @param zValues the z-values, where each element is a row of z-values
 	 * in the resultant heat chart.
 	 */
 	public HeatChart(double[][] zValues) {
-		this(zValues, 0.0, 0.0, 1.0, 1.0);
-	}
-	
-	/**
-	 * Creates a heatmap for x-values ranging from xOffset to (xInterval * zValues[0].length-1)
-	 * and y-values ranging from yOffset to (yInterval * zValues.length-1).
-	 * 
-	 * <p>For a full explanation of the way x/y-values are determined from the 
-	 * z-values, see the class JavaDoc above.
-	 * 
-	 * @param zValues the z-values, where each element is a row of z-values
-	 * in the resultant heat chart.
-	 * @param xOffset the offset to add to each array index to give the x-value.
-	 * @param yOffset the offset to add to each array index to give the y-value.
-	 * @param xInterval the x-value spacing between each row index in the data 
-	 * array.
-	 * @param yInterval the y-value spacing between each column index in the data 
-	 * array.
-	 */
-	public HeatChart(double[][] zValues, double xOffset, double yOffset, double xInterval, double yInterval) {
 		this.zValues = zValues;
-		this.xOffset = xOffset;
-		this.yOffset = yOffset;
-		this.xInterval = xInterval;
-		this.yInterval = yInterval;
-	
+		
+		// Default x/y-value settings.
+		setXValues(0, 1);
+		setYValues(0, 1);
+		
 		// Default chart settings.
 		this.cellWidth = 20;
 		this.cellHeight = 20;
@@ -254,12 +233,12 @@ public class HeatChart {
 		this.axisValuesFont = new Font("Sans-Serif", Font.PLAIN, 10);
 		this.xAxisValuesFrequency = 1;
 		this.xAxisValuesHeight = 0;
+		this.xValuesHorizontal = false;
 		this.showXAxisValues = true;
 		this.showYAxisValues = true;
 		this.yAxisValuesFrequency = 1;
 		this.yAxisValuesHeight = 0;
-		this.xAxisValuesPrecision = 3;
-		this.yAxisValuesPrecision = 3;
+		this.yValuesHorizontal = true;
 		
 		// Default heatmap settings.
 		this.highValueColour = Color.BLACK;
@@ -333,121 +312,107 @@ public class HeatChart {
 	}
 	
 	/**
-	 * Returns the offset that will be applied to the index of each element in 
-	 * the z-values array to give the x-value, when the interval between each 
-	 * x-value is also calculated in. This interval is controlled by the 
-	 * xOffset setting.
-	 * 
-	 * @return the offset that will be added to the index of each z-value 
-	 * element to give its x-value.
-	 */
-	public double getXOffset() {
-		return xOffset;
-	}
-
-	/**
-	 * Sets the offset to apply to each column index in the z-values array to 
-	 * give the x-value for that column. The full x-value also includes the 
-	 * interval between each x-value set by the x-interval setting.
+	 * Sets the x-values which are plotted along the x-axis. The x-values are 
+	 * calculated based upon the indexes of the z-values array:
 	 * 
 	 * <blockcode><pre>
 	 * x-value = x-offset + (column-index * x-interval)
 	 * </pre></blockcode>
 	 * 
-	 * @param xOffset the new offset value to be applied to each column.
+	 * <p>The x-interval defines the gap between each x-value and the x-offset 
+	 * is applied to each value to offset them all from zero.
+	 * 
+	 * <p>Alternatively the x-values can be set more directly with the 
+	 * <code>setXValues(Object[])</code> method.
+	 * 
+	 * @param xOffset an offset value to be applied to the index of each z-value
+	 * element.
+	 * @param xInterval an interval that will separate each x-value item.
 	 */
-	public void setXOffset(double xOffset) {
-		this.xOffset = xOffset;
+	public void setXValues(double xOffset, double xInterval) {		
+		// Update the x-values according to the offset and interval.
+		xValues = new Object[zValues[0].length];
+		for (int i=0; i<zValues.length; i++) {
+			xValues[i] = xOffset + (i * xInterval);
+		}
 	}
-
+	
 	/**
-	 * Returns the offset that will be applied to the index of each element in 
-	 * the z-values array to give the y-value, when the interval between each 
-	 * y-value is also calculated in. This interval is controlled by the 
-	 * yOffset setting.
+	 * Sets the x-values which are plotted along the x-axis. The given x-values
+	 * array must be the same length as the z-values array has columns. Each 
+	 * of the x-values elements will be displayed according to their toString 
+	 * representation.
+	 * 
+	 * @param xValues an array of elements to be displayed as values along the
+	 * x-axis.
+	 */
+	public void setXValues(Object[] xValues) {
+		this.xValues = xValues;
+	}
+	
+	/**
+	 * Sets the y-values which are plotted along the y-axis. The y-values are 
+	 * calculated based upon the indexes of the z-values array:
 	 * 
 	 * <blockcode><pre>
-	 * y-value = y-offset + (row-index * y-interval)
+	 * y-value = y-offset + (column-index * y-interval)
 	 * </pre></blockcode>
 	 * 
-	 * @return the offset that will be added to the index of each z-value 
-	 * element to give its y-value.
+	 * <p>The y-interval defines the gap between each y-value and the y-offset 
+	 * is applied to each value to offset them all from zero.
+	 * 
+	 * <p>Alternatively the y-values can be set more directly with the 
+	 * <code>setYValues(Object[])</code> method.
+	 * 
+	 * @param yOffset an offset value to be applied to the index of each z-value
+	 * element.
+	 * @param yInterval an interval that will separate each y-value item.
 	 */
-	public double getYOffset() {
-		return yOffset;
+	public void setYValues(double yOffset, double yInterval) {
+		// Update the y-values according to the offset and interval.
+		yValues = new Object[zValues.length];
+		for (int i=0; i<zValues.length; i++) {
+			yValues[i] = yOffset + (i * yInterval);
+		}
 	}
-
+	
 	/**
-	 * Sets the offset to apply to each column index in the z-values array to 
-	 * give the y-value for that column. The full y-value also includes the 
-	 * interval between each y-value set by the y-interval setting.
+	 * Sets the y-values which are plotted along the y-axis. The given y-values
+	 * array must be the same length as the z-values array has columns. Each 
+	 * of the y-values elements will be displayed according to their toString 
+	 * representation.
 	 * 
-	 * <blockcode><pre>
-	 * y-value = y-offset + (row-index * y-interval)
-	 * </pre></blockcode>
-	 * 
-	 * @param yOffset the new offset value to be applied to each column.
+	 * @param yValues an array of elements to be displayed as values along the
+	 * y-axis.
 	 */
-	public void setYOffset(double yOffset) {
-		this.yOffset = yOffset;
+	public void setYValues(Object[] yValues) {
+		this.yValues = yValues;
+	}
+	
+	public Object[] getXValues() {
+		return xValues;
+	}
+	
+	public Object[] getYValues() {
+		return yValues;
 	}
 
-	/**
-	 * Returns the interval between each x-value. Each x-value is calculated 
-	 * from the column index, the x-interval and the x-offset.
-	 * 
-	 * <blockcode><pre>
-	 * x-value = x-offset + (column-index * x-interval)
-	 * </pre></blockcode>
-	 * 
-	 * @return the interval value between each x-value.
-	 */
-	public double getXInterval() {
-		return xInterval;
+	public void setXValuesHorizontal(boolean xValuesHorizontal) {
+		this.xValuesHorizontal = xValuesHorizontal;
 	}
-
-	/**
-	 * Sets the interval between each x-value. Each x-value is calculated 
-	 * from the column index, the x-interval and the x-offset.
-	 * 
-	 * <blockcode><pre>
-	 * x-value = x-offset + (column-index * x-interval)
-	 * </pre></blockcode>
-	 * 
-	 * @param xInterval the new interval set between each x-value.
-	 */
-	public void setXInterval(double xInterval) {
-		this.xInterval = xInterval;
+	
+	public boolean isXValuesHorizontal() {
+		return xValuesHorizontal;
 	}
-
-	/**
-	 * Returns the interval between each y-value. Each y-value is calculated 
-	 * from the row index, the y-interval and the y-offset.
-	 * 
-	 * <blockcode><pre>
-	 * y-value = y-offset + (row-index * y-interval)
-	 * </pre></blockcode>
-	 * 
-	 * @return the interval value between each y-value.
-	 */
-	public double getYInterval() {
-		return yInterval;
+	
+	public void setYValuesHorizontal(boolean yValuesHorizontal) {
+		this.yValuesHorizontal = yValuesHorizontal;
 	}
-
-	/**
-	 * Sets the interval between each y-value. Each y-value is calculated 
-	 * from the row index, the y-interval and the y-offset.
-	 * 
-	 * <blockcode><pre>
-	 * y-value = y-offset + (row-index * y-interval)
-	 * </pre></blockcode>
-	 * 
-	 * @param yInterval the new interval set between each y-value.
-	 */
-	public void setYInterval(double yInterval) {
-		this.yInterval = yInterval;
+	
+	public boolean isYValuesHorizontal() {
+		return yValuesHorizontal;
 	}
-
+	
 	/**
 	 * Sets the width of each individual cell that constitutes a value in x,y,z
 	 * data space. By setting the cell width, any previously set chart width 
@@ -1168,70 +1133,6 @@ public class HeatChart {
 	}
 
 	/**
-	 * Returns the precision of the displayed x-axis values. Values will be
-	 * rounded (half-up) to this precision for display.
-	 * 
-	 * <p>
-	 * The precision is currently defined as the number of significant figures. 
-	 * This is liable to change at some point.
-	 * 
-	 * @return the precision in use for values along the x-axis.
-	 */
-	public int getXAxisValuesPrecision() {
-		return xAxisValuesPrecision;
-	}
-
-	/**
-	 * Sets the precision of the displayed x-axis values. Values will be
-	 * rounded (half-up) to this precision for display.
-	 * 
-	 * <p>
-	 * The precision is currently defined as the number of significant figures. 
-	 * This is liable to change at some point.
-	 * 
-	 * <p>
-	 * Defaults to 2 s.f.
-	 * 
-	 * @param axisValuesPrecision the level of precision to use for displayed
-	 * x-axis values.
-	 */
-	public void setXAxisValuesPrecision(int axisValuesPrecision) {
-		xAxisValuesPrecision = axisValuesPrecision;
-	}
-
-	/**
-	 * Returns the precision of the displayed y-axis values. Values will be
-	 * rounded (half-up) to this precision for display.
-	 * 
-	 * <p>
-	 * The precision is currently defined as the number of significant figures. 
-	 * This is liable to change at some point.
-	 * 
-	 * @return the precision in use for values along the y-axis.
-	 */
-	public int getYAxisValuesPrecision() {
-		return yAxisValuesPrecision;
-	}
-
-	/**
-	 * Sets the precision of the displayed y-axis values. Values will be
-	 * rounded (half-up) to this precision for display.
-	 * 
-	 * <p>
-	 * The precision is currently defined as the number of significant figures. 
-	 * This is liable to change at some point.
-	 * 
-	 * <p>
-	 * Defaults to 2 s.f.
-	 * 
-	 * @param axisValuesPrecision the level of precision to use for displayed
-	 * y-axis values.
-	 */
-	public void setYAxisValuesPrecision(int axisValuesPrecision) {
-		yAxisValuesPrecision = axisValuesPrecision;
-	}
-
-	/**
 	 * Generates a new chart <code>Image</code> based upon the currently held 
 	 * settings and then attempts to save that image to disk, to the location 
 	 * provided as a File parameter. The image type of the saved file will 
@@ -1390,20 +1291,35 @@ public class HeatChart {
 			yAxisLabelHeight = 0;
 		}
 		
-		// Calculate x-axis value height.
+		// Calculate x-axis value dimensions.
 		if (showXAxisValues) {
 			tempGraphics.setFont(axisValuesFont);
 			FontMetrics metrics = tempGraphics.getFontMetrics();
 			xAxisValuesHeight = metrics.getHeight();
+			xAxisValuesWidthMax = 0;
+			for (Object o: xValues) {
+				int w = metrics.stringWidth(o.toString());
+				if (w > xAxisValuesWidthMax) {
+					xAxisValuesWidthMax = w;
+				}
+			}
 		} else {
 			xAxisValuesHeight = 0;
 		}
 		
-		// Calculate y-axis value height.
+		// Calculate y-axis value dimensions.
 		if (showYAxisValues) {
 			tempGraphics.setFont(axisValuesFont);
 			FontMetrics metrics = tempGraphics.getFontMetrics();
 			yAxisValuesHeight = metrics.getHeight();
+			yAxisValuesAscent = metrics.getAscent();
+			yAxisValuesWidthMax = 0;
+			for (Object o: yValues) {
+				int w = metrics.stringWidth(o.toString());
+				if (w > yAxisValuesWidthMax) {
+					yAxisValuesWidthMax = w;
+				}
+			}
 		} else {
 			yAxisValuesHeight = 0;
 		}
@@ -1412,9 +1328,24 @@ public class HeatChart {
 		heatMapWidth = (zValues[0].length * cellWidth);
 		heatMapHeight = (zValues.length * cellHeight);
 		
+		
+		int yValuesHorizontalSize = 0;
+		if (yValuesHorizontal) {
+			yValuesHorizontalSize = yAxisValuesWidthMax;
+		} else {
+			yValuesHorizontalSize = yAxisValuesHeight;
+		}
+		
+		int xValuesVerticalSize = 0;
+		if (xValuesHorizontal) {
+			xValuesVerticalSize = xAxisValuesHeight;
+		} else {
+			xValuesVerticalSize = xAxisValuesWidthMax;
+		}
+		
 		// Calculate chart dimensions.
-		chartWidth = heatMapWidth + (2 * chartMargin) + yAxisLabelHeight + yAxisValuesHeight + axisThickness;
-		chartHeight = heatMapHeight + (2 * chartMargin) + xAxisLabelHeight + xAxisValuesHeight + titleHeight + axisThickness;
+		chartWidth = heatMapWidth + (2 * chartMargin) + yAxisLabelHeight + yValuesHorizontalSize + axisThickness;
+		chartHeight = heatMapHeight + (2 * chartMargin) + xAxisLabelHeight + xValuesVerticalSize + titleHeight + axisThickness;
 	}
 	
 	/*
@@ -1459,7 +1390,7 @@ public class HeatChart {
 		}
 		
 		// Calculate the position of top right corner of heatmap.
-		int xHeatMap = chartMargin + axisThickness + yAxisLabelHeight + yAxisValuesHeight;
+		int xHeatMap = chartMargin + axisThickness + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
 		int yHeatMap = titleHeight + chartMargin;
 		
 		// Draw the heat map onto the chart.
@@ -1516,14 +1447,14 @@ public class HeatChart {
 			chartGraphics.setColor(axisColour);
 			
 			// Draw x-axis.
-			int x = chartMargin + yAxisLabelHeight + yAxisValuesHeight;
+			int x = chartMargin + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
 			int y = chartMargin + titleHeight + heatMapHeight;
 			int width = heatMapWidth + axisThickness;
 			int height = axisThickness;
 			chartGraphics.fillRect(x, y, width, height);
 			
 			// Draw y-axis.
-			x = chartMargin + yAxisLabelHeight + yAxisValuesHeight;
+			x = chartMargin + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
 			y = chartMargin + titleHeight;
 			width = axisThickness;
 			height = heatMapHeight;
@@ -1539,28 +1470,43 @@ public class HeatChart {
 			return;
 		}
 		
-		int noXCells = zValues[0].length;
-		
 		chartGraphics.setColor(axisValuesColour);
 		
-		for (int i=0; i<noXCells; i+=xAxisValuesFrequency) {
-			double xValue = (i * xInterval) + xOffset;
+		for (int i=0; i<xValues.length; i++) {
+			if (i % xAxisValuesFrequency != 0) {
+				continue;
+			}
 			
-			// Format to sf.
-			MathContext mc = new MathContext(xAxisValuesPrecision, RoundingMode.HALF_UP);
-		    BigDecimal bigDecimal = new BigDecimal(xValue, mc);
-		    String xValueStr = bigDecimal.toPlainString();
+			String xValueStr = xValues[i].toString();
 			
 			chartGraphics.setFont(axisValuesFont);
 			FontMetrics metrics = chartGraphics.getFontMetrics();
+			
 			int valueWidth = metrics.stringWidth(xValueStr);
 			
-			// Draw the value with whatever font is now set.
-			int valueXPos = (i * cellWidth) + ((cellWidth / 2) - (valueWidth / 2));
-			valueXPos += (chartMargin + yAxisLabelHeight + axisThickness + yAxisValuesHeight);
-			int valueYPos = (chartMargin + titleHeight + heatMapHeight + metrics.getAscent() + 1);
-			
-			chartGraphics.drawString(xValueStr, valueXPos, valueYPos);
+			if (xValuesHorizontal) {
+				// Draw the value with whatever font is now set.
+				int valueXPos = (i * cellWidth) + ((cellWidth / 2) - (valueWidth / 2));
+				valueXPos += (chartMargin + yAxisLabelHeight + axisThickness + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight));
+				int valueYPos = (chartMargin + titleHeight + heatMapHeight + metrics.getAscent() + 1);
+				
+				chartGraphics.drawString(xValueStr, valueXPos, valueYPos);
+			} else {
+				int valueXPos = chartMargin + yAxisLabelHeight + axisThickness + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight) + (i * cellWidth) + ((cellWidth / 2) + (xAxisValuesHeight / 2));
+				int valueYPos = chartMargin + titleHeight + heatMapHeight + axisThickness + valueWidth;
+				
+				// Create 270 degree rotated transform.
+				AffineTransform transform = chartGraphics.getTransform();
+				AffineTransform originalTransform = (AffineTransform) transform.clone();
+				transform.rotate(Math.toRadians(270), valueXPos, valueYPos);
+				chartGraphics.setTransform(transform);
+				
+				// Draw the string.
+				chartGraphics.drawString(xValueStr, valueXPos, valueYPos);
+				
+				// Revert to original transform before rotation.
+				chartGraphics.setTransform(originalTransform);
+			}
 		}
 	}
 	
@@ -1572,40 +1518,42 @@ public class HeatChart {
 			return;
 		}
 		
-		int noYCells = zValues.length;
-		int cellHeight = heatMapHeight/noYCells;
-		
 		chartGraphics.setColor(axisValuesColour);
-
-		for (int i=0; i<noYCells; i+=yAxisValuesFrequency) {
-			double yValue = (i * yInterval) + yOffset;
+		
+		for (int i=0; i<yValues.length; i++) {
+			if (i % yAxisValuesFrequency != 0) {
+				continue;
+			}
 			
-			// Format to sf.
-			MathContext mc = new MathContext(yAxisValuesPrecision, RoundingMode.HALF_UP);
-		    BigDecimal bigDecimal = new BigDecimal(yValue, mc);
-		    String yValueStr = bigDecimal.toPlainString();
+			String yValueStr = yValues[i].toString();
 			
 			chartGraphics.setFont(axisValuesFont);
 			FontMetrics metrics = chartGraphics.getFontMetrics();
+			
 			int valueWidth = metrics.stringWidth(yValueStr);
 			
-			// Draw the value with whatever font is now set.
-			int valueXPos = (chartMargin + yAxisLabelHeight + yAxisValuesHeight - 1);
-			int valueYPos = (chartMargin + titleHeight + heatMapHeight) - (i * cellHeight);
-			valueYPos -= (cellHeight / 2);
-			valueYPos += (valueWidth / 2);
-			
-			// Create 270 degree rotated transform.
-			AffineTransform transform = chartGraphics.getTransform();
-			AffineTransform originalTransform = (AffineTransform) transform.clone();
-			transform.rotate(Math.toRadians(270), valueXPos, valueYPos);
-			chartGraphics.setTransform(transform);
-			
-			// Draw the string.
-			chartGraphics.drawString(yValueStr, valueXPos, valueYPos);
-			
-			// Revert to original transform before rotation.
-			chartGraphics.setTransform(originalTransform);
+			if (yValuesHorizontal) {
+				// Draw the value with whatever font is now set.
+				int valueXPos = chartMargin + yAxisLabelHeight + (yAxisValuesWidthMax - valueWidth);
+				int valueYPos = chartMargin + titleHeight + (i * cellHeight) + (cellHeight/2) + (yAxisValuesAscent/2);
+				
+				chartGraphics.drawString(yValueStr, valueXPos, valueYPos);
+			} else {
+				int valueXPos = chartMargin + yAxisLabelHeight + yAxisValuesAscent;
+				int valueYPos = chartMargin + titleHeight + (i * cellHeight) + (cellHeight/2) + (valueWidth/2);
+				
+				// Create 270 degree rotated transform.
+				AffineTransform transform = chartGraphics.getTransform();
+				AffineTransform originalTransform = (AffineTransform) transform.clone();
+				transform.rotate(Math.toRadians(270), valueXPos, valueYPos);
+				chartGraphics.setTransform(transform);
+				
+				// Draw the string.
+				chartGraphics.drawString(yValueStr, valueXPos, valueYPos);
+				
+				// Revert to original transform before rotation.
+				chartGraphics.setTransform(originalTransform);
+			}
 		}
 	}
 	
@@ -1655,22 +1603,7 @@ public class HeatChart {
 	 * depending on the colour scale used: LINEAR, LOGARITHMIC, EXPONENTIAL.
 	 */
 	private int getColourPosition(double percentPosition) {
-		int colourPosition = (int) Math.round(colourValueDistance * Math.pow(percentPosition, colourScale));
-		
-		// Which colour group does that put us in.
-		/*if (colourScale == Scale.LOGARITHMIC) {
-			// 167*(logn(500x+1,10))/(logn(500+1,10));
-			int steepness = 500;
-			colourPosition = (int) Math.round(colourValueDistance * (logn(steepness*percentPosition+1,10))/(logn(steepness+1,10)));
-			//colourPosition = (int) Math.round((colourValueDistance / Math.log10(2.0)) * Math.log10(percentPosition+1));
-		} else if (colourScale == Scale.EXPONENTIAL) {
-			colourPosition = (int) Math.round(Math.pow(10.0, (percentPosition * Math.log10(colourValueDistance+1))) - 1);
-		} else {
-			// Use a linear scale.
-			colourPosition = (int) Math.floor(percentPosition * colourValueDistance);
-		}*/
-		
-		return colourPosition;
+		return (int) Math.round(colourValueDistance * Math.pow(percentPosition, colourScale));
 	}
 	
 	private int changeColourValue(int colourValue, int colourDistance) {
