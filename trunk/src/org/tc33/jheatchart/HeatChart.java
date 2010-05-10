@@ -31,29 +31,50 @@ import javax.imageio.stream.FileImageOutputStream;
 
 /**
  * The <code>HeatChart</code> class describes a chart which can display 
- * 3-dimensions of zValues. Heat charts are sometimes known as heat maps. 
+ * 3-dimensions of values - x,y and z, where x and y are the usual 2-dimensional
+ * axis and z is portrayed by colour intensity. Heat charts are sometimes known 
+ * as heat maps. 
  * 
  * <p>
  * Use of this chart would typically involve 3 steps:
  * <ol>
- * <li>Construction of a new instance, providing the necessary zValues for the x,y,z values.</li>
+ * <li>Construction of a new instance, providing the necessary z-values.</li>
  * <li>Configure the visual settings.</li>
  * <li>A call to either <code>getChartImage()</code> or <code>saveToFile(String)</code>.</li>
  * </ol>
  * 
  * <h3>Instantiation</h3>
  * <p>
- * Construction of a new <code>HeatChart</code> instance is through one of two
- * constructors. Both constructors take a 2-dimensional array of <tt>doubles</tt> 
- * which should contain the z-values for the chart. Consider this array to be 
- * the grid of values which will instead be represented as colours in the chart. 
- * One of the constructors then takes an interval and an offset for each of the 
- * x and y axis. These parameters supply the necessary information to describe 
- * the x-values and y-values for the zValues in the array. The quantity of x-values 
- * and y-values is already known from the lengths of the array dimensions. Then 
- * the offset parameters indicate what value the column or row in element 0 
- * represents. The intervals provide the increment from one column or row to the 
- * next.
+ * Construction of a new <code>HeatChart</code> instance is through its one
+ * constructor which takes a 2-dimensional array of <tt>doubles</tt> which 
+ * should contain the z-values for the chart. Consider this array to be 
+ * the grid of values which will instead be represented as colours in the chart.
+ * 
+ * <p>
+ * Setting of the x-values and y-values which are displayed along the 
+ * appropriate axis is optional, and by default will simply display the values 
+ * 0 to n-1, where n is the number of rows or columns. Otherwise, the x/y axis 
+ * values can be set with the <code>setXValues</code> and <code>setYValues
+ * </code> methods. Both methods are overridden with two forms:
+ * 
+ * <h4>Object axis values</h4>
+ * 
+ * <p>
+ * The simplist way to set the axis values is to use the methods which take an
+ * array of Object[]. This array must have the same length as the number of 
+ * columns for setXValues and same as the number of rows for setYValues. The 
+ * string representation of the objects will then be used as the axis values.
+ * 
+ * <h4>Offset and Interval</h4>
+ * 
+ * <p>
+ * This is convenient way of defining numerical values along the axis. One of 
+ * the two methods takes an interval and an offset for either the 
+ * x or y axis. These parameters supply the necessary information to describe 
+ * the values based upon the z-value indexes. The quantity of x-values and 
+ * y-values is already known from the lengths of the z-values array dimensions. 
+ * Then the offset parameters indicate what the first value will be, with the
+ * intervals providing the increment from one column or row to the next.
  * 
  * <p>
  * <strong>Consider an example:</strong>
@@ -69,22 +90,14 @@ import javax.imageio.stream.FileImageOutputStream;
  * double xInterval = 1.0;
  * double yInterval = 2.0;
  * 
- * HeatChart chart = new HeatChart(zValues, xOffset, yOffset, xInterval, yInterval);
+ * chart.setXValues(xOffset, xInterval);
+ * chart.setYValues(yOffset, yInterval);
  * </pre></blockquote>
  * 
- * In this example, the z-values range from 0.7 to 1.6. The x-values range from 
- * the xOffset value 1.0 to 4.0, which is calculated as the number of x-values 
+ * <p>In this example, the z-values range from 0.7 to 1.6. The x-values range 
+ * from the xOffset value 1.0 to 4.0, which is calculated as the number of x-values 
  * multiplied by the xInterval, shifted by the xOffset of 1.0. The y-values are 
  * calculated in the same way to give a range of values from 0.0 to 6.0. 
- * 
- * <p>The other constructor uses default values of 0 for both offset parameters 
- * and 1 for both interval parameters, therefore keeping it in line with the 
- * indexing of the array. As a result, element [5][4] of the z-values array will 
- * represent an x-value of 4.0 and a y-value of 5.0 (with the contents of that 
- * element being the z-value).
- * 
- * <p>A third constructor is likely to be added in a later version to enable the use 
- * of non-numeric x and y values.
  * 
  * <h3>Configuration</h3>
  * <p>
@@ -143,7 +156,6 @@ public class HeatChart {
 	private int chartWidth;
 	private int chartHeight;
 	private int chartMargin;
-	private boolean flexibleChartSize;
 	private Color backgroundColour;
 	
 	// Title settings.
@@ -213,9 +225,8 @@ public class HeatChart {
 		// Default chart settings.
 		this.cellWidth = 20;
 		this.cellHeight = 20;
-		this.chartMargin = 10;
+		this.chartMargin = 20;
 		this.backgroundColour = Color.WHITE;
-		this.flexibleChartSize = true;
 		
 		// Default title settings.
 		this.title = null;
@@ -389,26 +400,72 @@ public class HeatChart {
 		this.yValues = yValues;
 	}
 	
+	/**
+	 * Returns the x-values which are currently set to display along the x-axis.
+	 * The array that is returned is either that which was explicitly set with
+	 * <code>setXValues(Object[])</code> or that was generated from the offset
+	 * and interval that were given to <code>setXValues(double, double)</code>, 
+	 * in which case the object type of each element will be <code>Double</code>.
+	 * 
+	 * @return an array of the values that are to be displayed along the x-axis.
+	 */
 	public Object[] getXValues() {
 		return xValues;
 	}
 	
+	/**
+	 * Returns the y-values which are currently set to display along the y-axis.
+	 * The array that is returned is either that which was explicitly set with
+	 * <code>setYValues(Object[])</code> or that was generated from the offset
+	 * and interval that were given to <code>setYValues(double, double)</code>, 
+	 * in which case the object type of each element will be <code>Double</code>.
+	 * 
+	 * @return an array of the values that are to be displayed along the y-axis.
+	 */
 	public Object[] getYValues() {
 		return yValues;
 	}
 
+	/**
+	 * Sets whether the text of the values along the x-axis should be drawn 
+	 * horizontally left-to-right, or vertically top-to-bottom.
+	 * 
+	 * @param xValuesHorizontal true if x-values should be drawn horizontally, 
+	 * false if they should be drawn vertically.
+	 */
 	public void setXValuesHorizontal(boolean xValuesHorizontal) {
 		this.xValuesHorizontal = xValuesHorizontal;
 	}
 	
+	/**
+	 * Returns whether the text of the values along the x-axis are to be drawn
+	 * horizontally left-to-right, or vertically top-to-bottom.
+	 * 
+	 * @return true if the x-values will be drawn horizontally, false if they 
+	 * will be drawn vertically.
+	 */
 	public boolean isXValuesHorizontal() {
 		return xValuesHorizontal;
 	}
 	
+	/**
+	 * Sets whether the text of the values along the y-axis should be drawn 
+	 * horizontally left-to-right, or vertically top-to-bottom.
+	 * 
+	 * @param yValuesHorizontal true if y-values should be drawn horizontally, 
+	 * false if they should be drawn vertically.
+	 */
 	public void setYValuesHorizontal(boolean yValuesHorizontal) {
 		this.yValuesHorizontal = yValuesHorizontal;
 	}
 	
+	/**
+	 * Returns whether the text of the values along the y-axis are to be drawn
+	 * horizontally left-to-right, or vertically top-to-bottom.
+	 * 
+	 * @return true if the y-values will be drawn horizontally, false if they 
+	 * will be drawn vertically.
+	 */
 	public boolean isYValuesHorizontal() {
 		return yValuesHorizontal;
 	}
@@ -460,11 +517,8 @@ public class HeatChart {
 	}
 	
 	/**
-	 * Returns the width of the chart in pixels. If the flexibleChartSize 
-	 * setting is set to true then the actual chart image that is generated may 
-	 * be smaller than the width returned here. In the case that the chart 
-	 * image does get cropped smaller, successful calls to this method will 
-	 * return the new cropped width.
+	 * Returns the width of the chart in pixels as calculated according to the
+	 * cell dimensions, chart margin and other size settings.
 	 * 
 	 * @return the width in pixels of the chart image to be generated.
 	 */
@@ -489,11 +543,8 @@ public class HeatChart {
 //	}
 
 	/**
-	 * Returns the height of the chart in pixels. If the flexibleChartSize 
-	 * setting is set to true then the actual chart image that is generated may 
-	 * be smaller than the height returned here. In the case that the chart 
-	 * image does get cropped smaller, successful calls to this method will 
-	 * return the new cropped height.
+	 * Returns the height of the chart in pixels as calculated according to the
+	 * cell dimensions, chart margin and other size settings.
 	 * 
 	 * @return the height in pixels of the chart image to be generated.
 	 */
@@ -799,13 +850,6 @@ public class HeatChart {
 	 * The axis values are those values displayed alongside the axis bars at 
 	 * regular intervals. Both axis use the same font.
 	 * 
-	 * <p>
-	 * The font family and font style are used explicitly, but the font size 
-	 * is considered a preferred maximum. If the value does not fit within the 
-	 * cell boundaries at this size then it will be shrunk down to the greatest
-	 * size that fits, or the axisValuesMinFontSize settings. Whichever is the 
-	 * larger.
-	 * 
 	 * @return the font in use for the axis values.
 	 */
 	public Font getAxisValuesFont() {
@@ -816,13 +860,6 @@ public class HeatChart {
 	 * Sets the font which describes the visual style of the axis values. The 
 	 * axis values are those values displayed alongside the axis bars at 
 	 * regular intervals. Both axis use the same font.
-	 * 
-	 * <p>
-	 * The font family and font style set here are used explicitly, but the 
-	 * font size is considered a preferred maximum. If the value does not fit 
-	 * within the cell boundaries at this size then it will be shrunk down to 
-	 * the greatest size that fits, or the axisValuesMinFontSize settings. 
-	 * Whichever is the larger.
 	 * 
 	 * <p>
 	 * Defaults to Sans-Serif, PLAIN, 10 pixels.
@@ -858,9 +895,10 @@ public class HeatChart {
 	
 	/**
 	 * Returns the frequency of the values displayed along the x-axis. The 
-	 * frequency is how many columns in the x-dimension are given a value. A 
-	 * frequency of 2 would mean every other column has a value and a frequency 
-	 * of 3 would mean every third column would be given a value.
+	 * frequency is how many columns in the x-dimension have their value 
+	 * displayed. A frequency of 2 would mean every other column has a value 
+	 * shown and a frequency of 3 would mean every third column would be given a
+	 * value.
 	 * 
 	 * @return the frequency of the values displayed against columns.
 	 */
@@ -870,9 +908,9 @@ public class HeatChart {
 
 	/**
 	 * Sets the frequency of the values displayed along the x-axis. The 
-	 * frequency is how many columns in the x-dimension are given a value. A 
-	 * frequency of 2 would mean every other column has a value and a frequency 
-	 * of 3 would mean every third column would be given a value.
+	 * frequency is how many columns in the x-dimension have their value 
+	 * displayed. A frequency of 2 would mean every other column has a value and
+	 * a frequency of 3 would mean every third column would be given a value.
 	 * 
 	 * <p>
 	 * Defaults to 1. Every column is given a value.
@@ -881,13 +919,13 @@ public class HeatChart {
 	 * columns, where 1 is every column and 2 is every other column.
 	 */
 	public void setXAxisValuesFrequency(int axisValuesFrequency) {
-		xAxisValuesFrequency = axisValuesFrequency;
+		this.xAxisValuesFrequency = axisValuesFrequency;
 	}
 
 	/**
 	 * Returns the frequency of the values displayed along the y-axis. The 
-	 * frequency is how many rows in the y-dimension are given a value. A 
-	 * frequency of 2 would mean every other row has a value and a frequency 
+	 * frequency is how many rows in the y-dimension have their value displayed.
+	 * A frequency of 2 would mean every other row has a value and a frequency 
 	 * of 3 would mean every third row would be given a value.
 	 * 
 	 * @return the frequency of the values displayed against rows.
@@ -898,8 +936,8 @@ public class HeatChart {
 
 	/**
 	 * Sets the frequency of the values displayed along the y-axis. The 
-	 * frequency is how many rows in the y-dimension are given a value. A 
-	 * frequency of 2 would mean every other row has a value and a frequency 
+	 * frequency is how many rows in the y-dimension have their value displayed.
+	 * A frequency of 2 would mean every other row has a value and a frequency 
 	 * of 3 would mean every third row would be given a value.
 	 * 
 	 * <p>
@@ -922,6 +960,7 @@ public class HeatChart {
 	 * @return true if the x-axis values will be displayed, false otherwise.
 	 */
 	public boolean isShowXAxisValues() {
+		//TODO Could get rid of these flags and use a frequency of -1 to signal no values.
 		return showXAxisValues;
 	}
 
@@ -1093,43 +1132,6 @@ public class HeatChart {
 		colourValueDistance = Math.abs(r1 - r2);
 		colourValueDistance += Math.abs(g1 - g2);
 		colourValueDistance += Math.abs(b1 - b2);
-	}
-
-	/**
-	 * Returns whether flexible chart sizing is in use. If flexible chart 
-	 * sizing is used then the final chart image dimensions may differ from the 
-	 * chart width and chart height settings.
-	 * 
-	 * <p>
-	 * Flexible chart sizing is useful where the available width for the heat 
-	 * map does not divide neatly by the number of cells, thus leaving excess 
-	 * space around the heat map.
-	 * 
-	 * @return true if the chart size could be changed to fit the dataset, 
-	 * false otherwise.
-	 */
-	public boolean isFlexibleChartSize() {
-		return flexibleChartSize;
-	}
-
-	/**
-	 * Sets whether flexible chart sizing should be used. If flexible chart 
-	 * sizing is used then the final chart image dimensions may differ from the 
-	 * chart width and chart height settings.
-	 * 
-	 * <p>
-	 * Flexible chart sizing is useful where the available width for the heat 
-	 * map does not divide neatly by the number of cells, thus leaving excess 
-	 * space around the heat map.
-	 * 
-	 * <p>
-	 * Defaults to <tt>true</tt> - using flexible sizing.
-	 * 
-	 * @param flexibleChartSize true if flexible chart sizing should be used, 
-	 * false otherwise.
-	 */
-	public void setFlexibleChartSize(boolean flexibleChartSize) {
-		this.flexibleChartSize = flexibleChartSize;
 	}
 
 	/**
@@ -1642,46 +1644,5 @@ public class HeatChart {
 		}
 		return min;
 	}
-	
-	/*
-	 * Calculates log to any base.
-	 */
-	private static double logn(double value, double base) {
-		return Math.log(value)/Math.log(base);
-	}
 
-	/*public static void main(String[] args) {
-		double[][] data = new double[][]{
-				{5,4,3,4,5,6,7,6,5,6,7,6,5,4,5,6,7,8,9,8,7,8,9,8,7,6,5,4,3,5,7,6,5,5,4,6,7},
-				{4,3,4,5,6,7,6,5,4,5,6,5,4,3,4,5,6,5,4,5,6,5,4,3,2,6,5,6,7,6,5,4,5,6,4,3,4},
-				{3,4,5,6,7,6,5,4,5,6,5,4,3,2,3,4,4,5,6,5,7,6,5,4,5,6,5,4,3,2,3,4,5,6,5,4,6},
-				{4,5,6,7,6,5,4,5,6,7,6,5,4,3,5,6,7,6,5,4,3,5,6,7,6,5,4,5,4,3,5,7,6,5,4,5,6},
-				{5,6,7,6,5,4,5,6,5,6,7,6,5,4,6,7,4,5,6,5,4,5,7,6,5,4,5,6,4,5,6,7,6,5,5,6,7},
-				{6,7,8,7,6,5,4,5,4,5,6,7,6,5,4,5,4,3,4,5,6,5,6,7,8,9,8,7,8,9,8,7,6,6,4,2,3}
-		};
-		
-		
-		
-		HeatChart chart = new HeatChart(data);
-		chart.setChartHeight(300);
-		chart.setChartWidth(600);
-		chart.setTitle("An Example Data Chart");
-		chart.setAxisThickness(2);
-		chart.setXAxisLabel("X axis data");
-		chart.setYAxisLabel("Y axis data");
-		chart.setChartMargin(15);
-		chart.setXAxisValuesInterval(1);
-		chart.setYOffset(0.2);
-		chart.setShowYAxisValues(true);
-		chart.setShowXAxisValues(true);
-		chart.setHighValueColour(new Color(0,255,135));
-		chart.setLowValueColour(new Color(126,0,135));
-		chart.setBackgroundColour(new Color(230, 230, 250));
-		
-		try {
-			chart.saveToFile(new File("test.png"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}*/
 }
