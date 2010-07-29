@@ -343,7 +343,7 @@ public class HeatChart {
 	public void setXValues(double xOffset, double xInterval) {		
 		// Update the x-values according to the offset and interval.
 		xValues = new Object[zValues[0].length];
-		for (int i=0; i<zValues.length; i++) {
+		for (int i=0; i<zValues[0].length; i++) {
 			xValues[i] = xOffset + (i * xInterval);
 		}
 	}
@@ -1359,6 +1359,7 @@ public class HeatChart {
 			int yTitle = (chartMargin/2) + titleAscent;
 			int xTitle = (chartWidth/2) - (titleWidth/2);
 
+			chartGraphics.setFont(titleFont);
 			chartGraphics.setColor(titleColour);
 			chartGraphics.drawString(title, xTitle, yTitle);
 		}
