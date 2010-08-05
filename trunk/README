@@ -1,7 +1,7 @@
 *******************************************************************************
-**                                                                           **
-**          JHeatChart v.0.5            Tom Castle: www.tc33.org             **
-**                                                                           **
+
+            JHeatChart v.${version}            Tom Castle: www.tc33.org
+                                                                           
 *******************************************************************************
 |                                                                             |
 | JHeatChart is made available under a GPL license, for full details of the   |
@@ -14,8 +14,8 @@ see the JHeatChart project pages at http://www.tc33.org.
 
 Contents of release:
 
-    jheatchart-0.5
-        | jheatchart-0.5.jar - the library. Put this anywhere on your class path.
+    jheatchart-${version}
+        | jheatchart-${version}.jar - the library. Put this anywhere on your class path.
         | src - directory containing all the java source.
             | ...
         | javadoc - directory containing the javadoc for this release.
