@@ -200,6 +200,11 @@ public class HeatChart {
 	// How many RGB steps there are between the high and low colours.
 	private int colourValueDistance;
 	
+	// Key co-ordinate positions.
+	private Point heatMapTL;
+	private Point heatMapBR;
+	private Point heatMapC;
+	
 	// Heat map dimensions.
 	private int heatMapWidth;
 	private int heatMapHeight;
@@ -1213,6 +1218,7 @@ public class HeatChart {
 	public Image getChartImage() {
 		// Calculate all unknown dimensions.
 		measureComponents();
+		updateCoordinates();
 		
 		// Create our chart image which we will eventually draw everything on.
 		// Using BufferedImage.TYPE_INT_ARGB seems to break on jpg.
@@ -1351,6 +1357,26 @@ public class HeatChart {
 	}
 	
 	/*
+	 * Calculates the co-ordinates of some key positions.
+	 */
+	private void updateCoordinates() {
+		// Top-left of heat map.
+		int x = chartMargin + axisThickness + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
+		int y = titleHeight + chartMargin;
+		heatMapTL = new Point(x, y);
+
+		// Top-right of heat map.
+		x = heatMapTL.x + heatMapWidth;
+		y = heatMapTL.y + heatMapHeight;
+		heatMapBR = new Point(x, y);
+		
+		// Center of heat map.
+		x = heatMapTL.x + (heatMapWidth / 2);
+		y = heatMapTL.y + (heatMapHeight / 2);
+		heatMapC = new Point(x, y);
+	}
+	
+	/*
 	 * Draws the title String on the chart if title is not null.
 	 */
 	private void drawTitle(Graphics2D chartGraphics) {
@@ -1392,12 +1418,8 @@ public class HeatChart {
 			}
 		}
 		
-		// Calculate the position of top right corner of heatmap.
-		int xHeatMap = chartMargin + axisThickness + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
-		int yHeatMap = titleHeight + chartMargin;
-		
 		// Draw the heat map onto the chart.
-		chartGraphics.drawImage(heatMapImage, xHeatMap, yHeatMap, heatMapWidth, heatMapHeight, null);
+		chartGraphics.drawImage(heatMapImage, heatMapTL.x, heatMapTL.y, heatMapWidth, heatMapHeight, null);
 	}
 	
 	/*
@@ -1408,7 +1430,7 @@ public class HeatChart {
 			// Strings are drawn from the baseline position of the leftmost char.
 			int yPosXAxisLabel = chartHeight - (chartMargin / 2) - xAxisLabelDescent;
 			//TODO This will need to be updated if the y-axis values/label can be moved to the right.
-			int xPosXAxisLabel = ((heatMapWidth / 2) - (xAxisLabelWidth / 2)) + chartMargin + yAxisLabelHeight + yAxisValuesHeight;
+			int xPosXAxisLabel = heatMapC.x - (xAxisLabelWidth / 2);
 			
 			chartGraphics.setFont(axisLabelsFont);
 			chartGraphics.setColor(axisLabelColour);
@@ -1422,7 +1444,7 @@ public class HeatChart {
 	private void drawYLabel(Graphics2D chartGraphics) {
 		if (yAxisLabel != null) {
 			// Strings are drawn from the baseline position of the leftmost char.
-			int yPosYAxisLabel = chartMargin + titleHeight + (heatMapHeight / 2) + (yAxisLabelWidth / 2);
+			int yPosYAxisLabel = heatMapC.y + (yAxisLabelWidth / 2);
 			int xPosYAxisLabel = (chartMargin / 2) + yAxisLabelAscent;
 			
 			chartGraphics.setFont(axisLabelsFont);
@@ -1450,15 +1472,15 @@ public class HeatChart {
 			chartGraphics.setColor(axisColour);
 			
 			// Draw x-axis.
-			int x = chartMargin + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
-			int y = chartMargin + titleHeight + heatMapHeight;
+			int x = heatMapTL.x - axisThickness;
+			int y = heatMapBR.y;
 			int width = heatMapWidth + axisThickness;
 			int height = axisThickness;
 			chartGraphics.fillRect(x, y, width, height);
 			
 			// Draw y-axis.
-			x = chartMargin + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
-			y = chartMargin + titleHeight;
+			x = heatMapTL.x - axisThickness;
+			y = heatMapTL.y;
 			width = axisThickness;
 			height = heatMapHeight;
 			chartGraphics.fillRect(x, y, width, height);
@@ -1490,13 +1512,13 @@ public class HeatChart {
 			if (xValuesHorizontal) {
 				// Draw the value with whatever font is now set.
 				int valueXPos = (i * cellWidth) + ((cellWidth / 2) - (valueWidth / 2));
-				valueXPos += (chartMargin + yAxisLabelHeight + axisThickness + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight));
-				int valueYPos = (chartMargin + titleHeight + heatMapHeight + metrics.getAscent() + 1);
+				valueXPos += heatMapTL.x;
+				int valueYPos = heatMapBR.y + metrics.getAscent() + 1;
 				
 				chartGraphics.drawString(xValueStr, valueXPos, valueYPos);
 			} else {
-				int valueXPos = chartMargin + yAxisLabelHeight + axisThickness + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight) + (i * cellWidth) + ((cellWidth / 2) + (xAxisValuesHeight / 2));
-				int valueYPos = chartMargin + titleHeight + heatMapHeight + axisThickness + valueWidth;
+				int valueXPos = heatMapTL.x + (i * cellWidth) + ((cellWidth / 2) + (xAxisValuesHeight / 2));
+				int valueYPos = heatMapBR.y + axisThickness + valueWidth;
 				
 				// Create 270 degree rotated transform.
 				AffineTransform transform = chartGraphics.getTransform();
@@ -1538,12 +1560,12 @@ public class HeatChart {
 			if (yValuesHorizontal) {
 				// Draw the value with whatever font is now set.
 				int valueXPos = chartMargin + yAxisLabelHeight + (yAxisValuesWidthMax - valueWidth);
-				int valueYPos = chartMargin + titleHeight + (i * cellHeight) + (cellHeight/2) + (yAxisValuesAscent/2);
+				int valueYPos = heatMapTL.y + (i * cellHeight) + (cellHeight/2) + (yAxisValuesAscent/2);
 				
 				chartGraphics.drawString(yValueStr, valueXPos, valueYPos);
 			} else {
 				int valueXPos = chartMargin + yAxisLabelHeight + yAxisValuesAscent;
-				int valueYPos = chartMargin + titleHeight + (i * cellHeight) + (cellHeight/2) + (valueWidth/2);
+				int valueYPos = heatMapTL.y + (i * cellHeight) + (cellHeight/2) + (valueWidth/2);
 				
 				// Create 270 degree rotated transform.
 				AffineTransform transform = chartGraphics.getTransform();
