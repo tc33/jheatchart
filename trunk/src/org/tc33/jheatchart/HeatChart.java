@@ -151,19 +151,16 @@ public class HeatChart {
 	private boolean yValuesHorizontal;
 	
 	// General chart settings.
-	private int cellWidth;
-	private int cellHeight;
-	private int chartWidth;
-	private int chartHeight;
-	private int chartMargin;
+	private Dimension cellSize;
+	private Dimension chartSize;
+	private int margin;
 	private Color backgroundColour;
 	
 	// Title settings.
 	private String title;
 	private Font titleFont;
 	private Color titleColour;
-	private int titleWidth;
-	private int titleHeight;
+	private Dimension titleSize;
 	private int titleAscent;
 	
 	// Axis settings.
@@ -182,15 +179,16 @@ public class HeatChart {
 	
 	// Generated axis properties.
 	private int xAxisValuesHeight;
+	private int xAxisValuesWidthMax;
+	
 	private int yAxisValuesHeight;
 	private int yAxisValuesAscent;
-	private int xAxisValuesWidthMax;
 	private int yAxisValuesWidthMax;
-	private int xAxisLabelHeight;
-	private int xAxisLabelWidth;
+	
+	private Dimension xAxisLabelSize;
 	private int xAxisLabelDescent;
-	private int yAxisLabelHeight;
-	private int yAxisLabelWidth;
+	
+	private Dimension yAxisLabelSize;
 	private int yAxisLabelAscent;
 	
 	// Heat map colour settings.
@@ -206,8 +204,7 @@ public class HeatChart {
 	private Point heatMapC;
 	
 	// Heat map dimensions.
-	private int heatMapWidth;
-	private int heatMapHeight;
+	private Dimension heatMapSize;
 	
 	// Control variable for mapping z-values to colours.
 	private double colourScale;
@@ -228,9 +225,8 @@ public class HeatChart {
 		setYValues(0, 1);
 		
 		// Default chart settings.
-		this.cellWidth = 20;
-		this.cellHeight = 20;
-		this.chartMargin = 20;
+		this.cellSize = new Dimension(20, 20);
+		this.margin = 20;
 		this.backgroundColour = Color.WHITE;
 		
 		// Default title settings.
@@ -482,10 +478,11 @@ public class HeatChart {
 	 * number of cells in there are along the x-axis.
 	 * 
 	 * @param cellWidth the new width to use for each individual data cell.
+	 * @deprecated As of release 0.6, replaced by {@link #setCellSize(Dimension)}
 	 */
+	@Deprecated
 	public void setCellWidth(int cellWidth) {
-		this.cellWidth = cellWidth;
-		//this.chartWidth = -1;		
+		setCellSize(new Dimension(cellWidth, cellSize.height));
 	}
 	
 	/**
@@ -493,9 +490,11 @@ public class HeatChart {
 	 * in the x,y,z space.
 	 * 
 	 * @return the width of each cell.
+	 * @deprecated As of release 0.6, replaced by {@link #getCellSize}
 	 */
+	@Deprecated
 	public int getCellWidth() {
-		return cellWidth;
+		return cellSize.width;
 	}
 	
 	/**
@@ -505,10 +504,11 @@ public class HeatChart {
 	 * number of cells in there are along the y-axis.
 	 * 
 	 * @param cellHeight the new height to use for each individual data cell.
+	 * @deprecated As of release 0.6, replaced by {@link #setCellSize(Dimension)}
 	 */
+	@Deprecated
 	public void setCellHeight(int cellHeight) {
-		this.cellHeight = cellHeight;
-		//this.chartHeight = -1;
+		setCellSize(new Dimension(cellSize.width, cellHeight));
 	}
 	
 	/**
@@ -516,9 +516,35 @@ public class HeatChart {
 	 * in the x,y,z space.
 	 * 
 	 * @return the height of each cell.
+	 * @deprecated As of release 0.6, replaced by {@link #getCellSize()}
 	 */
+	@Deprecated
 	public int getCellHeight() {
-		return cellHeight;
+		return cellSize.height;
+	}
+	
+	/**
+	 * Sets the size of each individual cell that constitutes a value in x,y,z
+	 * data space. By setting the cell size, any previously set chart size will
+	 * be overwritten with a value calculated based upon this value and the 
+	 * number of cells along each axis.
+	 * 
+	 * @param cellSize the new size to use for each individual data cell.
+	 * @since 0.6
+	 */
+	public void setCellSize(Dimension cellSize) {
+		this.cellSize = cellSize;
+	}
+	
+	/**
+	 * Returns the size of each individual data cell that constitutes a value in
+	 * the x,y,z space.
+	 * 
+	 * @return the size of each individual data cell.
+	 * @since 0.6
+	 */
+	public Dimension getCellSize() {
+		return cellSize;
 	}
 	
 	/**
@@ -526,52 +552,35 @@ public class HeatChart {
 	 * cell dimensions, chart margin and other size settings.
 	 * 
 	 * @return the width in pixels of the chart image to be generated.
+	 * @deprecated As of release 0.6, replaced by {@link #getChartSize()}
 	 */
+	@Deprecated
 	public int getChartWidth() {
-		return chartWidth;
+		return chartSize.width;
 	}
-
-//	/**
-//	 * Sets the width of the chart to be generated in pixels. The actual width 
-//	 * of the chart image may vary from this if the flexibleChartSize setting 
-//	 * is set to true.
-//	 * 
-//	 * <p>
-//	 * Defaults to 800 pixels.
-//	 * 
-//	 * @param width the width in pixels to use for any successive chart images
-//	 * that are generated.
-//	 */
-//	public void setChartWidth(int width) {
-//		this.chartWidth = width;
-//		this.cellWidth = -1;
-//	}
 
 	/**
 	 * Returns the height of the chart in pixels as calculated according to the
 	 * cell dimensions, chart margin and other size settings.
 	 * 
 	 * @return the height in pixels of the chart image to be generated.
+	 * @deprecated As of release 0.6, replaced by {@link #getChartSize()}
 	 */
+	@Deprecated
 	public int getChartHeight() {
-		return chartHeight;
+		return chartSize.height;
 	}
-
-//	/**
-//	 * Sets the height of the chart to be generated in pixels. The actual 
-//	 * height of the chart image may vary from this if the flexibleChartSize 
-//	 * setting is set to true.
-//	 * 
-//	 * <p>
-//	 * Defaults to 400 pixels.
-//	 * 
-//	 * @param height the height in pixels to use for any successive chart 
-//	 * images that are generated.
-//	 */
-//	public void setChartHeight(int height) {
-//		this.chartHeight = height;
-//		this.cellHeight = -1;
-//	}
+	
+	/**
+	 * Returns the size of the chart in pixels as calculated according to the 
+	 * cell dimensions, chart margin and other size settings.
+	 * 
+	 * @return the size in pixels of the chart image to be generated.
+	 * @since 0.6
+	 */
+	public Dimension getChartSize() {
+		return chartSize;
+	}
 
 	/**
 	 * Returns the String that will be used as the title of any successive 
@@ -664,7 +673,7 @@ public class HeatChart {
 	 * chart.
 	 */
 	public int getChartMargin() {
-		return chartMargin;
+		return margin;
 	}
 
 	/**
@@ -680,7 +689,7 @@ public class HeatChart {
 	 * map.
 	 */
 	public void setChartMargin(int margin) {
-		this.chartMargin = margin;
+		this.margin = margin;
 	}
 
 	/**
@@ -1222,7 +1231,7 @@ public class HeatChart {
 		
 		// Create our chart image which we will eventually draw everything on.
 		// Using BufferedImage.TYPE_INT_ARGB seems to break on jpg.
-		BufferedImage chartImage = new BufferedImage(chartWidth, chartHeight, BufferedImage.TYPE_3BYTE_BGR);
+		BufferedImage chartImage = new BufferedImage(chartSize.width, chartSize.height, BufferedImage.TYPE_3BYTE_BGR);
 		Graphics2D chartGraphics = chartImage.createGraphics();
 		
 		// Use anti-aliasing where ever possible.
@@ -1231,7 +1240,7 @@ public class HeatChart {
 
 		// Set the background.
 		chartGraphics.setColor(backgroundColour);
-		chartGraphics.fillRect(0, 0, chartWidth, chartHeight);
+		chartGraphics.fillRect(0, 0, chartSize.width, chartSize.height);
 		
 		// Draw the title.
 		drawTitle(chartGraphics);
@@ -1267,36 +1276,30 @@ public class HeatChart {
 		if (title != null) {
 			tempGraphics.setFont(titleFont);
 			FontMetrics metrics = tempGraphics.getFontMetrics();
-			titleWidth = metrics.stringWidth(title);
-			titleHeight = metrics.getHeight();
+			titleSize = new Dimension(metrics.stringWidth(title), metrics.getHeight());
 			titleAscent = metrics.getAscent();
 		} else {
-			titleWidth = 0;
-			titleHeight = 0;
+			titleSize = new Dimension(0, 0);
 		}
 		
 		// Calculate x-axis label dimensions.
 		if (xAxisLabel != null) {
 			tempGraphics.setFont(axisLabelsFont);
 			FontMetrics metrics = tempGraphics.getFontMetrics();
-			xAxisLabelWidth = metrics.stringWidth(xAxisLabel);
-			xAxisLabelHeight = metrics.getHeight();
+			xAxisLabelSize = new Dimension(metrics.stringWidth(xAxisLabel), metrics.getHeight());
 			xAxisLabelDescent = metrics.getDescent();
 		} else {
-			xAxisLabelWidth = 0;
-			xAxisLabelHeight = 0;
+			xAxisLabelSize = new Dimension(0, 0);
 		}
 		
 		// Calculate y-axis label dimensions.
 		if (yAxisLabel != null) {
 			tempGraphics.setFont(axisLabelsFont);
 			FontMetrics metrics = tempGraphics.getFontMetrics();
-			yAxisLabelWidth = metrics.stringWidth(yAxisLabel);
-			yAxisLabelHeight = metrics.getHeight();
+			yAxisLabelSize = new Dimension(metrics.stringWidth(yAxisLabel), metrics.getHeight());
 			yAxisLabelAscent = metrics.getAscent();
 		} else {
-			yAxisLabelWidth = 0;
-			yAxisLabelHeight = 0;
+			yAxisLabelSize = new Dimension(0, 0);
 		}
 		
 		// Calculate x-axis value dimensions.
@@ -1333,9 +1336,9 @@ public class HeatChart {
 		}
 		
 		// Calculate heatmap dimensions.
-		heatMapWidth = (zValues[0].length * cellWidth);
-		heatMapHeight = (zValues.length * cellHeight);
-		
+		int heatMapWidth = (zValues[0].length * cellSize.width);
+		int heatMapHeight = (zValues.length * cellSize.height);
+		heatMapSize = new Dimension(heatMapWidth, heatMapHeight);
 		
 		int yValuesHorizontalSize = 0;
 		if (yValuesHorizontal) {
@@ -1352,8 +1355,9 @@ public class HeatChart {
 		}
 		
 		// Calculate chart dimensions.
-		chartWidth = heatMapWidth + (2 * chartMargin) + yAxisLabelHeight + yValuesHorizontalSize + axisThickness;
-		chartHeight = heatMapHeight + (2 * chartMargin) + xAxisLabelHeight + xValuesVerticalSize + titleHeight + axisThickness;
+		int chartWidth = heatMapWidth + (2 * margin) + yAxisLabelSize.height + yValuesHorizontalSize + axisThickness;
+		int chartHeight = heatMapHeight + (2 * margin) + xAxisLabelSize.height + xValuesVerticalSize + titleSize.height + axisThickness;
+		chartSize = new Dimension(chartWidth, chartHeight);
 	}
 	
 	/*
@@ -1361,18 +1365,19 @@ public class HeatChart {
 	 */
 	private void updateCoordinates() {
 		// Top-left of heat map.
-		int x = chartMargin + axisThickness + yAxisLabelHeight + (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
-		int y = titleHeight + chartMargin;
+		int x = margin + axisThickness + yAxisLabelSize.height;
+		x += (yValuesHorizontal ? yAxisValuesWidthMax : yAxisValuesHeight);
+		int y = titleSize.height + margin;
 		heatMapTL = new Point(x, y);
 
 		// Top-right of heat map.
-		x = heatMapTL.x + heatMapWidth;
-		y = heatMapTL.y + heatMapHeight;
+		x = heatMapTL.x + heatMapSize.width;
+		y = heatMapTL.y + heatMapSize.height;
 		heatMapBR = new Point(x, y);
 		
-		// Center of heat map.
-		x = heatMapTL.x + (heatMapWidth / 2);
-		y = heatMapTL.y + (heatMapHeight / 2);
+		// Centre of heat map.
+		x = heatMapTL.x + (heatMapSize.width / 2);
+		y = heatMapTL.y + (heatMapSize.height / 2);
 		heatMapC = new Point(x, y);
 	}
 	
@@ -1382,8 +1387,8 @@ public class HeatChart {
 	private void drawTitle(Graphics2D chartGraphics) {
 		if (title != null) {			
 			// Strings are drawn from the baseline position of the leftmost char.
-			int yTitle = (chartMargin/2) + titleAscent;
-			int xTitle = (chartWidth/2) - (titleWidth/2);
+			int yTitle = (margin/2) + titleAscent;
+			int xTitle = (chartSize.width/2) - (titleSize.width/2);
 
 			chartGraphics.setFont(titleFont);
 			chartGraphics.setColor(titleColour);
@@ -1403,7 +1408,7 @@ public class HeatChart {
 		double dataMin = min(data);
 		double dataMax = max(data);
 
-		BufferedImage heatMapImage = new BufferedImage(heatMapWidth, heatMapHeight, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage heatMapImage = new BufferedImage(heatMapSize.width, heatMapSize.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D heatMapGraphics = heatMapImage.createGraphics();
 		
 		for (int x=0; x<noXCells; x++) {
@@ -1411,15 +1416,15 @@ public class HeatChart {
 				// Set colour depending on zValues.
 				heatMapGraphics.setColor(getCellColour(data[y][x], dataMin, dataMax));
 				
-				int cellX = x*cellWidth;
-				int cellY = y*cellHeight;
+				int cellX = x*cellSize.width;
+				int cellY = y*cellSize.height;
 				
-				heatMapGraphics.fillRect(cellX, cellY, cellWidth, cellHeight);
+				heatMapGraphics.fillRect(cellX, cellY, cellSize.width, cellSize.height);
 			}
 		}
 		
 		// Draw the heat map onto the chart.
-		chartGraphics.drawImage(heatMapImage, heatMapTL.x, heatMapTL.y, heatMapWidth, heatMapHeight, null);
+		chartGraphics.drawImage(heatMapImage, heatMapTL.x, heatMapTL.y, heatMapSize.width, heatMapSize.height, null);
 	}
 	
 	/*
@@ -1428,9 +1433,9 @@ public class HeatChart {
 	private void drawXLabel(Graphics2D chartGraphics) {
 		if (xAxisLabel != null) {
 			// Strings are drawn from the baseline position of the leftmost char.
-			int yPosXAxisLabel = chartHeight - (chartMargin / 2) - xAxisLabelDescent;
+			int yPosXAxisLabel = chartSize.height - (margin / 2) - xAxisLabelDescent;
 			//TODO This will need to be updated if the y-axis values/label can be moved to the right.
-			int xPosXAxisLabel = heatMapC.x - (xAxisLabelWidth / 2);
+			int xPosXAxisLabel = heatMapC.x - (xAxisLabelSize.width / 2);
 			
 			chartGraphics.setFont(axisLabelsFont);
 			chartGraphics.setColor(axisLabelColour);
@@ -1444,8 +1449,8 @@ public class HeatChart {
 	private void drawYLabel(Graphics2D chartGraphics) {
 		if (yAxisLabel != null) {
 			// Strings are drawn from the baseline position of the leftmost char.
-			int yPosYAxisLabel = heatMapC.y + (yAxisLabelWidth / 2);
-			int xPosYAxisLabel = (chartMargin / 2) + yAxisLabelAscent;
+			int yPosYAxisLabel = heatMapC.y + (yAxisLabelSize.width / 2);
+			int xPosYAxisLabel = (margin / 2) + yAxisLabelAscent;
 			
 			chartGraphics.setFont(axisLabelsFont);
 			chartGraphics.setColor(axisLabelColour);
@@ -1474,7 +1479,7 @@ public class HeatChart {
 			// Draw x-axis.
 			int x = heatMapTL.x - axisThickness;
 			int y = heatMapBR.y;
-			int width = heatMapWidth + axisThickness;
+			int width = heatMapSize.width + axisThickness;
 			int height = axisThickness;
 			chartGraphics.fillRect(x, y, width, height);
 			
@@ -1482,7 +1487,7 @@ public class HeatChart {
 			x = heatMapTL.x - axisThickness;
 			y = heatMapTL.y;
 			width = axisThickness;
-			height = heatMapHeight;
+			height = heatMapSize.height;
 			chartGraphics.fillRect(x, y, width, height);
 		}
 	}
@@ -1511,13 +1516,13 @@ public class HeatChart {
 			
 			if (xValuesHorizontal) {
 				// Draw the value with whatever font is now set.
-				int valueXPos = (i * cellWidth) + ((cellWidth / 2) - (valueWidth / 2));
+				int valueXPos = (i * cellSize.width) + ((cellSize.width / 2) - (valueWidth / 2));
 				valueXPos += heatMapTL.x;
 				int valueYPos = heatMapBR.y + metrics.getAscent() + 1;
 				
 				chartGraphics.drawString(xValueStr, valueXPos, valueYPos);
 			} else {
-				int valueXPos = heatMapTL.x + (i * cellWidth) + ((cellWidth / 2) + (xAxisValuesHeight / 2));
+				int valueXPos = heatMapTL.x + (i * cellSize.width) + ((cellSize.width / 2) + (xAxisValuesHeight / 2));
 				int valueYPos = heatMapBR.y + axisThickness + valueWidth;
 				
 				// Create 270 degree rotated transform.
@@ -1559,13 +1564,13 @@ public class HeatChart {
 			
 			if (yValuesHorizontal) {
 				// Draw the value with whatever font is now set.
-				int valueXPos = chartMargin + yAxisLabelHeight + (yAxisValuesWidthMax - valueWidth);
-				int valueYPos = heatMapTL.y + (i * cellHeight) + (cellHeight/2) + (yAxisValuesAscent/2);
+				int valueXPos = margin + yAxisLabelSize.height + (yAxisValuesWidthMax - valueWidth);
+				int valueYPos = heatMapTL.y + (i * cellSize.height) + (cellSize.height/2) + (yAxisValuesAscent/2);
 				
 				chartGraphics.drawString(yValueStr, valueXPos, valueYPos);
 			} else {
-				int valueXPos = chartMargin + yAxisLabelHeight + yAxisValuesAscent;
-				int valueYPos = heatMapTL.y + (i * cellHeight) + (cellHeight/2) + (valueWidth/2);
+				int valueXPos = margin + yAxisLabelSize.height + yAxisValuesAscent;
+				int valueYPos = heatMapTL.y + (i * cellSize.height) + (cellSize.height/2) + (valueWidth/2);
 				
 				// Create 270 degree rotated transform.
 				AffineTransform transform = chartGraphics.getTransform();
