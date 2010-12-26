@@ -198,6 +198,9 @@ public class HeatChart {
 	// How many RGB steps there are between the high and low colours.
 	private int colourValueDistance;
 	
+	private double lowValue;
+	private double highValue;
+	
 	// Key co-ordinate positions.
 	private Point heatMapTL;
 	private Point heatMapBR;
@@ -210,7 +213,7 @@ public class HeatChart {
 	private double colourScale;
 	
 	/**
-	 * Creates a heatmap for the given z-values against x/y-values that by 
+	 * Constructs a heatmap for the given z-values against x/y-values that by 
 	 * default will be the values 0 to n-1, where n is the number of columns or 
 	 * rows.
 	 * 
@@ -218,7 +221,25 @@ public class HeatChart {
 	 * in the resultant heat chart.
 	 */
 	public HeatChart(double[][] zValues) {
+		this(zValues, min(zValues), max(zValues));
+	}
+	
+	/**
+	 * Constructs a heatmap for the given z-values against x/y-values that by 
+	 * default will be the values 0 to n-1, where n is the number of columns or
+	 * rows.
+	 * 
+	 * @param zValues the z-values, where each element is a row of z-values
+	 * in the resultant heat chart.
+	 * @param low the minimum possible value, which may or may not appear in the
+	 * z-values.
+	 * @param high the maximum possible value, which may or may not appear in 
+	 * the z-values.
+	 */
+	public HeatChart(double[][] zValues, double low, double high) {
 		this.zValues = zValues;
+		this.lowValue = low;
+		this.highValue = high;
 		
 		// Default x/y-value settings.
 		setXValues(0, 1);
@@ -261,6 +282,26 @@ public class HeatChart {
 	}
 	
 	/**
+	 * Returns the low value. This is the value at which the low value colour
+	 * will be applied.
+	 * 
+	 * @return the low value.
+	 */
+	public double getLowValue() {
+		return lowValue;
+	}
+	
+	/**
+	 * Returns the high value. This is the value at which the high value colour
+	 * will be applied.
+	 * 
+	 * @return the high value.
+	 */
+	public double getHighValue() {
+		return highValue;
+	}
+	
+	/**
 	 * Returns the 2-dimensional array of z-values currently in use. Each 
 	 * element is a double array which represents one row of the heat map, or  
 	 * all the z-values for one y-value.
@@ -273,9 +314,25 @@ public class HeatChart {
 	}
 	
 	/**
+	 * Replaces the z-values array. See the 
+	 * {@link #setZValues(double[][], double, double)} method for an example of 
+	 * z-values. The smallest and largest values in the array are used as the 
+	 * minimum and maximum values respectively.
+	 * @param zValues the array to replace the current array with. The number 
+	 * of elements in each inner array must be identical.
+	 */
+	public void setZValues(double[][] zValues) {
+		setZValues(zValues, min(zValues), max(zValues));
+	}
+	
+	/**
 	 * Replaces the z-values array. The number of elements should match the 
 	 * number of y-values, with each element containing a double array with 
-	 * an equal number of elements that matches the number of x-values.
+	 * an equal number of elements that matches the number of x-values. Use this
+	 * method where the minimum and maximum values possible are not contained
+	 * within the dataset.
+	 * 
+	 * <h2>Example</h2>
 	 * 
 	 * <blockcode><pre>
 	 * new double[][]{
@@ -318,9 +375,15 @@ public class HeatChart {
 	 * 
 	 * @param zValues the array to replace the current array with. The number 
 	 * of elements in each inner array must be identical.
+	 * @param low the minimum possible value, which may or may not appear in the
+	 * z-values.
+	 * @param high the maximum possible value, which may or may not appear in 
+	 * the z-values.
 	 */
-	public void setZValues(double[][] zValues) {
+	public void setZValues(double[][] zValues, double low, double high) {
 		this.zValues = zValues;
+		this.lowValue = low;
+		this.highValue = high;
 	}
 	
 	/**
@@ -1405,8 +1468,8 @@ public class HeatChart {
 		int noYCells = data.length;
 		int noXCells = data[0].length;
 		
-		double dataMin = min(data);
-		double dataMax = max(data);
+		//double dataMin = min(data);
+		//double dataMax = max(data);
 
 		BufferedImage heatMapImage = new BufferedImage(heatMapSize.width, heatMapSize.height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D heatMapGraphics = heatMapImage.createGraphics();
@@ -1414,7 +1477,7 @@ public class HeatChart {
 		for (int x=0; x<noXCells; x++) {
 			for (int y=0; y<noYCells; y++) {
 				// Set colour depending on zValues.
-				heatMapGraphics.setColor(getCellColour(data[y][x], dataMin, dataMax));
+				heatMapGraphics.setColor(getCellColour(data[y][x], lowValue, highValue));
 				
 				int cellX = x*cellSize.width;
 				int cellY = y*cellSize.height;
@@ -1650,7 +1713,7 @@ public class HeatChart {
 	/*
 	 * Determines maximum value in a 2-dimensional array of doubles.
 	 */
-	private static double max(double[][] values) {
+	public static double max(double[][] values) {
 		double max = 0;
 		for (int i=0; i<values.length; i++) {
 			for (int j=0; j<values[i].length; j++) {
@@ -1663,7 +1726,7 @@ public class HeatChart {
 	/*
 	 * Determines minimum value in a 2-dimensional array of doubles.
 	 */
-	private static double min(double[][] values) {
+	public static double min(double[][] values) {
 		double min = Double.MAX_VALUE;
 		for (int i=0; i<values.length; i++) {
 			for (int j=0; j<values[i].length; j++) {
