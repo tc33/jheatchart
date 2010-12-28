@@ -766,7 +766,10 @@ public class HeatChart {
 	}
 
 	/**
-	 * Sets the colour to be used on the background of the chart. 
+	 * Sets the colour to be used on the background of the chart. A transparent
+	 * background can be set by setting a background colour with an alpha value.
+	 * The transparency will only be effective when the image is saved as a png
+	 * or gif. 
 	 * 
 	 * <p>
 	 * Defaults to <code>Color.WHITE</code>.
@@ -1237,8 +1240,6 @@ public class HeatChart {
 	 * incorrect.
 	 */
 	public void saveToFile(File outputFile) throws IOException {
-		BufferedImage chart = (BufferedImage) getChartImage();
-
 		String filename = outputFile.getName();
 
 		int extPoint = filename.lastIndexOf('.');
@@ -1248,12 +1249,17 @@ public class HeatChart {
 		}
 
 		// Determine the extension of the filename.
-		String ext = filename.substring(extPoint + 1);		
-
-		// Save our graphic.
+		String ext = filename.substring(extPoint + 1);
+		
+		// Handle jpg without transparency.
 		if (ext.toLowerCase().equals("jpg") || ext.toLowerCase().equals("jpeg")) {
+			BufferedImage chart = (BufferedImage) getChartImage(false);
+
+			// Save our graphic.
 			saveGraphicJpeg(chart, outputFile, 1.0f);
 		} else {
+			BufferedImage chart = (BufferedImage) getChartImage(true);
+			
 			ImageIO.write(chart, ext, outputFile);
 		}
 	}
@@ -1277,30 +1283,36 @@ public class HeatChart {
 	
 	/**
 	 * Generates and returns a new chart <code>Image</code> configured 
-	 * according to this object's currently held settings.
+	 * according to this object's currently held settings. The given parameter 
+	 * determines whether transparency should be enabled for the generated 
+	 * image.
 	 * 
 	 * <p>
 	 * No chart will be generated until this or the related 
 	 * <code>saveToFile(File)</code> method are called. All successive calls 
 	 * will result in the generation of a new chart image, no caching is used.
 	 * 
+	 * @param alpha whether to enable transparency.
 	 * @return A newly generated chart <code>Image</code>. The returned image 
 	 * is a <code>BufferedImage</code>.
 	 */
-	public Image getChartImage() {
+	public Image getChartImage(boolean alpha) {
 		// Calculate all unknown dimensions.
 		measureComponents();
 		updateCoordinates();
 		
-		// Create our chart image which we will eventually draw everything on.
+		// Determine image type based upon whether require alpha or not.
 		// Using BufferedImage.TYPE_INT_ARGB seems to break on jpg.
-		BufferedImage chartImage = new BufferedImage(chartSize.width, chartSize.height, BufferedImage.TYPE_3BYTE_BGR);
+		int imageType = (alpha ? BufferedImage.TYPE_4BYTE_ABGR : BufferedImage.TYPE_3BYTE_BGR);
+		
+		// Create our chart image which we will eventually draw everything on.
+		BufferedImage chartImage = new BufferedImage(chartSize.width, chartSize.height, imageType);
 		Graphics2D chartGraphics = chartImage.createGraphics();
 		
 		// Use anti-aliasing where ever possible.
 		chartGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
 									   RenderingHints.VALUE_ANTIALIAS_ON);
-
+		
 		// Set the background.
 		chartGraphics.setColor(backgroundColour);
 		chartGraphics.fillRect(0, 0, chartSize.width, chartSize.height);
@@ -1323,6 +1335,23 @@ public class HeatChart {
 		drawYValues(chartGraphics);
 		
 		return chartImage;
+	}
+	
+	/**
+	 * Generates and returns a new chart <code>Image</code> configured 
+	 * according to this object's currently held settings. By default the image
+	 * is generated with no transparency.
+	 * 
+	 * <p>
+	 * No chart will be generated until this or the related 
+	 * <code>saveToFile(File)</code> method are called. All successive calls 
+	 * will result in the generation of a new chart image, no caching is used.
+	 * 
+	 * @return A newly generated chart <code>Image</code>. The returned image 
+	 * is a <code>BufferedImage</code>.
+	 */
+	public Image getChartImage() {
+		return getChartImage(false);
 	}
 	
 	/*
@@ -1710,8 +1739,10 @@ public class HeatChart {
 		}
 	}
 	
-	/*
-	 * Determines maximum value in a 2-dimensional array of doubles.
+	/**
+	 * Finds and returns the maximum value in a 2-dimensional array of doubles.
+	 * 
+	 * @return the largest value in the array.
 	 */
 	public static double max(double[][] values) {
 		double max = 0;
@@ -1723,8 +1754,10 @@ public class HeatChart {
 		return max;
 	}
 	
-	/*
-	 * Determines minimum value in a 2-dimensional array of doubles.
+	/**
+	 * Finds and returns the minimum value in a 2-dimensional array of doubles.
+	 * 
+	 * @return the smallest value in the array.
 	 */
 	public static double min(double[][] values) {
 		double min = Double.MAX_VALUE;
