@@ -1,12 +1,12 @@
 /*  
  *  Copyright 2010 Tom Castle (www.tc33.org)
- *  Licensed under GNU General Public License
+ *  Licensed under GNU Lesser General Public License
  * 
  *  This file is part of JHeatChart - the heat maps charting api for Java.
  *
  *  JHeatChart is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
+ *  it under the terms of the GNU Lesser General Public License as published 
+ *  by the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
  *  JHeatChart is distributed in the hope that it will be useful,
